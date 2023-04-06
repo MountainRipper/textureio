@@ -5,7 +5,12 @@
 #include <string.h>
 #include <glad/egl.h>
 #include <glad/gl.h>
+#if  defined(__linux__)
 #include <glad/glx.h>
+#elif defined(WIN32) || defined(WIN64)
+#include <glad/wgl.h>
+#endif
+
 #include <libavutil/pixfmt.h>
 #include <logger.h>
 #include <ttf/ttf_notosans_sc_level_1s.h>
@@ -186,8 +191,8 @@ int main(int argc, char *argv[]) {
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-  native_window = (void *)glfwGetWin32Window(win);
-  opengl_context = (void *)glfwGetWGLContext(win);
+  native_window = (void *)glfwGetWin32Window(window);
+  opengl_context = (void *)glfwGetWGLContext(window);
 #endif
 
   auto video_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -243,7 +248,7 @@ int main(int argc, char *argv[]) {
 
   g_example = new TextureioExample();
   g_example->on_init(window);
-
+  g_example->resize_callback(win_w, win_h);
   while (!glfwWindowShouldClose(window)) {
 
    // glfwMakeContextCurrent(win);

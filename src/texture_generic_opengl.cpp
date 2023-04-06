@@ -24,16 +24,17 @@ using namespace mr::tio;
     #include <glad/gles2.h>
 #elif __linux__
     #include <glad/gl.h>
-    #ifndef GL_LUMINANCE
-    #define GL_LUMINANCE 0x1909
-    #endif
-    #ifndef GL_LUMINANCE_ALPHA
-    #define GL_LUMINANCE_ALPHA 0x190A
-#endif
 #elif __unix__
     #include <glad/gl.h>
 #elif __posix
 
+#endif
+
+#ifndef GL_LUMINANCE
+#define GL_LUMINANCE 0x1909
+#endif
+#ifndef GL_LUMINANCE_ALPHA
+#define GL_LUMINANCE_ALPHA 0x190A
 #endif
 
 const char* SHADER_HEADER_DEFINE_PRECISION_AND_TEXCOORD = R"(
@@ -337,6 +338,7 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
     const GLuint channel_foramt_es[5] = {0,GL_LUMINANCE,GL_LUMINANCE_ALPHA,GL_RGB,GL_RGBA};
     const GLuint* channel_format = gles_ ? channel_foramt_es : channel_foramt_core;
 
+    const char* texture_uniform_name[] = {"tex1","tex2","tex3","tex4"};
     for(int index = 0; index < planers.count; index++){
         if(index >= planers.count)
             break;
@@ -347,7 +349,7 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
         uint32_t format = channel_format[planer.channels];
         uint32_t linesize = frame.line_size[index];
 
-        if(frame.format == kSoftwareFrameBGRA32 && bgra_support_){
+        if(frame.format == kSoftwareFormatBGRA32 && bgra_support_){
             format = GL_BGRA;
         }
 
@@ -373,6 +375,11 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
                    GL_UNSIGNED_BYTE,
                    frame.data[index]);
         VGFX_GL_CHECK("TextureGenericOpenGL::upload glTexImage2D")
+
+        if(texture.program){
+            auto location = glGetUniformLocation(texture.program, texture_uniform_name[index]);
+            glUniform1i(location, GL_TEXTURE0 + texture.flags[index]);
+        }
     }
 
     return 0;
@@ -387,85 +394,85 @@ std::string TextureGenericOpenGL::reference_shader_software(SoftwareFrameFormat 
 
     shader_string += sharder_textures_define_of_count[planers.count];
 
-    if(format >= kSoftwareFrameYUVStart && format <= kSoftwareFrameYUVEnd){
+    if(format >= kSoftwareFormatYUVStart && format <= kSoftwareFormatYUVEnd){
         shader_string += sharder_colorspace_define_of_type[color_space];
     }
 
     switch (format) {
     //420 formats
-    case kSoftwareFrameI420:
+    case kSoftwareFormatI420:
         shader_string += SHADER_BODY_YUV420P_444P;
         break;
-    case kSoftwareFrameYV12:
+    case kSoftwareFormatYV12:
         shader_string += SHADER_BODY_YV12;
         break;
-    case kSoftwareFrameNV12:
+    case kSoftwareFormatNV12:
         shader_string += SHADER_BODY_NV12_NV16_NV24_422P;
         break;///< planar YUV 4:2:0, 12bpp, 1 plane for Y and 1 plane for the UV components, which are interleaved (first byte U and the following byte V)
-    case kSoftwareFrameNV21:
+    case kSoftwareFormatNV21:
         shader_string += SHADER_BODY_NV21_NV61_NV42;
         break;
 
     //422 formats
-    case kSoftwareFrameI422   :
+    case kSoftwareFormatI422   :
         shader_string += SHADER_BODY_YUV420P_444P;
         break;
-    case kSoftwareFrameNV16   :
+    case kSoftwareFormatNV16   :
         shader_string += SHADER_BODY_NV12_NV16_NV24_422P;
         break;
-    case kSoftwareFrameNV61   :
+    case kSoftwareFormatNV61   :
         shader_string += SHADER_BODY_NV21_NV61_NV42;
         break;
-    case kSoftwareFrameYUYV422   : break;
-    case kSoftwareFrameYVYU422   : break;
-    case kSoftwareFrameUYVY422   : break;
+    case kSoftwareFormatYUYV422   : break;
+    case kSoftwareFormatYVYU422   : break;
+    case kSoftwareFormatUYVY422   : break;
 
     //444 formats
-    case kSoftwareFrameI444   :
+    case kSoftwareFormatI444   :
         shader_string += SHADER_BODY_YUV420P_444P;
         break;
-    case kSoftwareFrameNV24      :
+    case kSoftwareFormatNV24      :
         shader_string += SHADER_BODY_NV12_NV16_NV24_422P;
         break;
-    case kSoftwareFrameNV42      :
+    case kSoftwareFormatNV42      :
         shader_string += SHADER_BODY_NV21_NV61_NV42;
         break;
-    case kSoftwareFrameYUV444    :
+    case kSoftwareFormatYUV444    :
         shader_string += SHADER_BODY_YUV444;
         break;
 
     //rgb/gbr
-    case kSoftwareFrameRGB24     :
+    case kSoftwareFormatRGB24     :
         shader_string += SHADER_BODY_RGB;
         break;
-    case kSoftwareFrameBGR24     :
+    case kSoftwareFormatBGR24     :
         shader_string += SHADER_BODY_BGR;
         break;
 
     //rgba formats
-    case kSoftwareFrameRGBA32    :
+    case kSoftwareFormatRGBA32    :
         shader_string += SHADER_BODY_RGBA;
         break;
-    case kSoftwareFrameBGRA32    :
+    case kSoftwareFormatBGRA32    :
         if(bgra_support_)
             shader_string += SHADER_BODY_BGRA_IN;
         else
             shader_string += SHADER_BODY_BGRA;
         break;
-    case kSoftwareFrameARGB32    :
+    case kSoftwareFormatARGB32    :
         shader_string += SHADER_BODY_ARGB;
         break;
-    case kSoftwareFrameABGR32    :
+    case kSoftwareFormatABGR32    :
         shader_string += SHADER_BODY_ABGR;
         break;
 
     //gray
-    case kSoftwareFrameGRAY8     :
+    case kSoftwareFormatGRAY8     :
         shader_string += SHADER_BODY_GRAY;
         break;
 
     //gray alpha
-    case kSoftwareFrameGRAY8A    :
+    case kSoftwareFormatGRAY8A    :
         shader_string += SHADER_BODY_GRAY_ALPHA;
         break;
     default:

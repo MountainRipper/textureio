@@ -1,8 +1,8 @@
 #ifndef TEXTUREIOEXAMPLE_H
 #define TEXTUREIOEXAMPLE_H
 #include "example_base.h"
-#include "tio/tio_hardware_graphic.h"
-#include "tio/tio_software_frame.h"
+#include <tio/tio_hardware_graphic.h>
+#include <tio/tio_software_frame.h>
 
 using namespace mr::tio;
 class TextureioExample : public ExampleBase
@@ -27,7 +27,14 @@ private:
     uint32_t textures_[4] = {0};
     uint32_t texture_locations_[4] = {0};
     uint32_t texture_unit_base_ = 2;
-    uint32_t program_[kSoftwareFrameCount];
+    uint32_t programs_[kSoftwareFormatCount];
+    int width_ = 0;
+    int height_ = 0;
+
+    SoftwareFrameWithMemory test_picture_;
+    SoftwareFrameConvert software_converter_;
+    int pic_width_ = 0;
+    int pic_height_ = 0;
 };
 
 

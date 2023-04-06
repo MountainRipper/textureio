@@ -15,6 +15,24 @@ string(TOLOWER ${MP_TARGET_OS} MP_TARGET_OS)
 if(NOT DEFINED  ${MP_TARGET_ARCH})
     set(MP_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR})
 endif()
+
+if(${MP_TARGET_OS} MATCHES "linux")
+    include_directories(/usr/include/drm)
+elseif(${MP_TARGET_OS} MATCHES "windows")
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        set(MP_TARGET_OS "mingw")
+    endif()
+elseif(${MP_TARGET_OS} MATCHES "darwin")
+
+elseif(${MP_TARGET_OS} MATCHES "android")
+
+elseif(${MP_TARGET_OS} MATCHES "ios")
+endif()
+
+if(${MP_TARGET_ARCH} MATCHES "AMD64")
+    set(MP_TARGET_ARCH "x86_64")
+endif()
+
 set(THIRD_PARTY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../third_party")
 set(THIRD_PARTY_TARGET "${THIRD_PARTY_ROOT}/targets/${MP_TARGET_OS}-${MP_TARGET_ARCH}")
 
