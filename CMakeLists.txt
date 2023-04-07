@@ -38,6 +38,7 @@ set(THIRD_PARTY_TARGET "${THIRD_PARTY_ROOT}/targets/${MP_TARGET_OS}-${MP_TARGET_
 
 message(STATUS "INFO:MAKE FOR OS:${MP_TARGET_OS} ARCH:${MP_TARGET_ARCH}")
 include_directories(textureio PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/tio"
     "${THIRD_PARTY_ROOT}/include"
     "${THIRD_PARTY_ROOT}/include/imgui"
     "${THIRD_PARTY_TARGET}/include")
@@ -54,6 +55,9 @@ target_include_directories(textureio
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+target_link_libraries(textureio
+    PUBLIC
+    yuv)
 
 #target_link_libraries(video2hw PRIVATE )
 #target_compile_definitions(video2hw PRIVATE)

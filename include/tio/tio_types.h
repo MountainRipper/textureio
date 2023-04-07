@@ -42,6 +42,7 @@ enum SoftwareFrameFormat: int32_t{
 
     //values
     kSoftwareFormatCount,
+    kSoftwareFormatFirst = kSoftwareFormatI420,
     kSoftwareFormatYUVStart = kSoftwareFormatI420,
     kSoftwareFormatYUVEnd = kSoftwareFormatYUV444,
 };

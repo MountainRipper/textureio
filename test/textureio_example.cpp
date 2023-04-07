@@ -97,7 +97,7 @@ int32_t TextureioExample::on_frame()
 
             software_converter_.convert(test_picture_,dest);
             glUseProgram(programs_[index]);
-            TextureIO::software_frame_to_graphic(dest,texture);
+            //TextureIO::software_frame_to_graphic(dest,texture);
 
 
             ImGui::SetNextWindowPos(ImVec2(item_percent*column*width_,item_percent*row*height_));
