@@ -24,14 +24,17 @@ public:
     virtual void scroll_callback(double xoffset, double yoffset) override;
     virtual void command(std::string command) override;
 private:
+    void convert_to_target_frames();
+private:
     uint32_t textures_[4] = {0};
-    uint32_t texture_locations_[4] = {0};
     uint32_t texture_unit_base_ = 2;
-    uint32_t programs_[kSoftwareFormatCount];
+    uint32_t programs_[kSoftwareFormatCount];    
+    uint32_t g_vao = 0;
     int width_ = 0;
     int height_ = 0;
 
     SoftwareFrameWithMemory test_picture_;
+    std::shared_ptr<SoftwareFrameWithMemory> target_frames_[kSoftwareFormatCount];
     SoftwareFrameConvert software_converter_;
     int pic_width_ = 0;
     int pic_height_ = 0;

@@ -1,11 +1,11 @@
-#ifndef CONVERTTOI444_H
-#define CONVERTTOI444_H
+#ifndef CONVERTFROMI444_H
+#define CONVERTFROMI444_H
 
 
 class ConvertFromI444
 {
 public:
-    void register_converter();
+    static void register_converter();
 };
 
 #endif // CONVERTTOI444_H

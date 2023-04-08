@@ -1,10 +1,10 @@
-#ifndef CONVERTTOI420_H
-#define CONVERTTOI420_H
+#ifndef CONVERTFROMI420_H
+#define CONVERTFROMI420_H
 
 
 class ConvertFromI420
 {
 public:
-    void register_converter();
+    static void register_converter();
 };
 #endif // CONVERTTOI420_H

@@ -8,10 +8,10 @@ TextureIO::TextureIO()
 {
 }
 
-int32_t TextureIO::software_frame_to_graphic(const SoftwareFrame &frame, GraphicTexture &texture)
+int32_t TextureIO::software_frame_to_graphic(const SoftwareFrame &frame, GraphicTexture &texture,SamplerMode sampler_mode)
 {
     if(texture.api == kGraphicApiOpenGL){
-        TextureGenericOpenGL::upload(frame,texture);
+        TextureGenericOpenGL::upload(frame,texture,sampler_mode);
     }
     return 0;
 }

@@ -4,12 +4,13 @@
 namespace mr {
 namespace tio {
 
+
 class TextureIO
 {
 public:
     TextureIO();
 
-    static int32_t software_frame_to_graphic(const SoftwareFrame& frame,GraphicTexture& texture);
+    static int32_t software_frame_to_graphic(const SoftwareFrame& frame,GraphicTexture& texture,SamplerMode sampler_mode = kSamplerAuto);
     static int32_t software_frame_to_hardware_frame();
     static int32_t hardware_frame_to_graphic();
     static int32_t hardware_frame_to_software_frame();

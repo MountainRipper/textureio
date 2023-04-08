@@ -38,10 +38,12 @@ int32_t TextureioExample::on_init(void *window)
     int channels = 3;//as rgb
     auto image = stbi_load_from_memory((uint8_t*)test_pic_data,test_pic_size,&pic_width_,&pic_height_,&channels,channels);
     assert(channels == 3);
-    test_picture_ = SoftwareFrameWithMemory{{kSoftwareFormatRGB24,pic_width_,pic_height_}};
+    test_picture_ = SoftwareFrameWithMemory{{kSoftwareFormatRGB24,(uint32_t)pic_width_,(uint32_t)pic_height_}};
     test_picture_.alloc();
     memcpy(test_picture_.data_buffer_,image,pic_width_*pic_height_*3);
     stbi_image_free(image);
+
+    convert_to_target_frames();
 
     textures_[0] = create_texture(128,128,0);
     textures_[1] = create_texture(128,128,128);
@@ -54,16 +56,22 @@ int32_t TextureioExample::on_init(void *window)
     if(version && strstr(version,"OpenGL ES"))
         vertex_shader = std::string("#version 300 es") + vertex_shader;
     else
-        vertex_shader = std::string("#version 430") + vertex_shader;
+        vertex_shader = std::string("#version 330") + vertex_shader;
 
 
     VGFX_GL_CHECK(mp::Logger::kLogLevelError,"glGetString");
 
     for(int index = 0; index < kSoftwareFormatCount; index++){
         auto fragment_shader = TextureIO::reference_shader_software(kGraphicApiOpenGL,static_cast<SoftwareFrameFormat>(index));
-        MP_INFO("{}",fragment_shader.c_str());
+        if(version && strstr(version,"OpenGL ES"))
+            fragment_shader = std::string("#version 300 es") + fragment_shader;
+        else
+            fragment_shader = std::string("#version 330") + fragment_shader;
+        //MP_INFO("{}",fragment_shader.c_str());
         programs_[index] = create_program(vertex_shader.c_str(),fragment_shader.c_str());
     }
+
+    glGenVertexArrays(1, &g_vao);
     return 0;
 }
 
@@ -78,8 +86,14 @@ int32_t TextureioExample::on_frame()
     int index=0;
     int row_columns = 5;
     float item_percent = 1.0 / row_columns;
+    int item_width = width_*item_percent;
+    int item_height = height_*item_percent;
     for(int row = 0; row < row_columns; row++){
         for(int column = 0; column < row_columns; column++){
+            int x = item_percent*column*width_;
+            int y = item_percent*row*height_;
+            int vy = height_ - y - item_height;
+
             if(index >= kSoftwareFormatCount)
                 break;
 
@@ -89,18 +103,33 @@ int32_t TextureioExample::on_frame()
             texture.api = kGraphicApiOpenGL;
             for(int index = 0; index < 3; index++){
                 texture.context[index] = textures_[index];
-                texture.flags[index] = texture_unit_base_+index;
+                texture.flags[index] = GL_TEXTURE0 + texture_unit_base_ + index;
             }
 
-            SoftwareFrameWithMemory dest{{format,test_picture_.width,test_picture_.height}};
-            dest.alloc();
+            GLuint program = programs_[index];
 
-            software_converter_.convert(test_picture_,dest);
-            glUseProgram(programs_[index]);
-            //TextureIO::software_frame_to_graphic(dest,texture);
+            glUseProgram(program);
 
+            std::shared_ptr<SoftwareFrameWithMemory> frame = target_frames_[index];
+            TextureIO::software_frame_to_graphic(*frame,texture);
 
-            ImGui::SetNextWindowPos(ImVec2(item_percent*column*width_,item_percent*row*height_));
+            const char* texture_uniform_names[3] = {"tex1","tex2","tex3"};
+            for(int index = 0; index < 3; index++){
+                GLint texture_location = glGetUniformLocation(program, texture_uniform_names[index]);
+                if(texture_location >= 0){
+                    glUniform1i(texture_location, texture_unit_base_+index);
+                }
+            }
+            GLint video_size_location = glGetUniformLocation(program, "videoSize");
+            if(video_size_location >= 0){
+                glUniform2f(video_size_location,frame->width,frame->height);
+            }
+
+            glBindVertexArray(g_vao);
+            glViewport(x,vy,item_width,item_height);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            ImGui::SetNextWindowPos(ImVec2(x,y));
             ImGui::SetNextWindowBgAlpha(0.15f);
             std::string win_name = "hint-";
             win_name += g_soft_format_names[index];
@@ -146,4 +175,26 @@ void TextureioExample::scroll_callback(double xoffset, double yoffset)
 
 void TextureioExample::command(std::string command)
 {
+}
+
+void TextureioExample::convert_to_target_frames()
+{
+    SoftwareFrameWithMemory input_image = {{kSoftwareFormatYUYV422,test_picture_.width,test_picture_.height}};
+    input_image.alloc();
+    software_converter_.convert(test_picture_,input_image);
+
+    for(int index = 0; index < kSoftwareFormatCount; index++){
+        SoftwareFrameFormat format = static_cast<SoftwareFrameFormat>(index);
+
+        std::shared_ptr<SoftwareFrameWithMemory> dest = std::shared_ptr<SoftwareFrameWithMemory>(new SoftwareFrameWithMemory{{format,test_picture_.width,test_picture_.height}});
+        dest->alloc();
+        target_frames_[index] = dest;
+
+        software_converter_.convert(input_image,*dest);
+        if(format == mr::tio::kSoftwareFormatYVYU422){
+            FILE* f = fopen("test-888x500.yvyu","wb");
+            fwrite(dest->data_buffer_,test_picture_.width*test_picture_.height*2,1,f);
+            fclose(f);
+        }
+    }
 }

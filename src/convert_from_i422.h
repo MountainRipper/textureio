@@ -1,11 +1,11 @@
-#ifndef CONVERTTOI422_H
-#define CONVERTTOI422_H
+#ifndef CONVERTFROMI422_H
+#define CONVERTFROMI422_H
 #include <cstdint>
 
 class ConvertFromI422
 {
 public:
-    void register_converter();
+    static void register_converter();
 };
 
 #endif // CONVERTTOI422_H

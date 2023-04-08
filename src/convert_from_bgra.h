@@ -1,11 +1,11 @@
-#ifndef CONVERTTOARGB_H
-#define CONVERTTOARGB_H
+#ifndef CONVERTFROMARGB_H
+#define CONVERTFROMARGB_H
 
 
 class ConvertFromBGRA
 {
 public:
-    void register_converter();
+    static void register_converter();
 };
 
 #endif // CONVERTTOARGB_H

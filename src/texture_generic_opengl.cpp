@@ -153,8 +153,11 @@ void main()
     LOWP vec3 rgb;
 
     yuv.x = TEXTURE2D(tex1,   v_texCoord).r;
+#ifdef GL_ES
     yuv.yz = TEXTURE2D(tex2, v_texCoord).ra;
-
+#else
+    yuv.yz = TEXTURE2D(tex2, v_texCoord).rg;
+#endif
     yuv += offset;
     rgb = matrix * yuv;
 
@@ -170,7 +173,11 @@ void main()
     LOWP vec3 rgb;
 
     yuv.x = TEXTURE2D(tex1,   v_texCoord).r;
+#ifdef GL_ES
     yuv.yz = TEXTURE2D(tex2, v_texCoord).ar;
+#else
+    yuv.yz = TEXTURE2D(tex2, v_texCoord).gr;
+#endif
 
     yuv += offset;
     rgb = matrix * yuv;
@@ -181,13 +188,69 @@ void main()
 )";
 
 const char* SHADER_BODY_YUYV422 = R"(
+uniform vec2 videoSize;
 void main()
 {
     MEDIUMP vec3 yuv;
     LOWP vec3 rgb;
 
-    yuv.x = TEXTURE2D(tex1,   v_texCoord).r;
-    //TODO
+    MEDIUMP vec4 yuyv = TEXTURE2D(tex1, v_texCoord);
+    if (mod(round(v_texCoord.x * videoSize.x),2.0) == 1.0) {
+        yuv.x = yuyv.r;
+    } else {
+        yuv.x = TEXTURE2D(tex1, vec2(v_texCoord.x - 1.0 / videoSize.x,v_texCoord.y)).b;
+    }
+    yuv.y = yuyv.g;
+    yuv.z = yuyv.a;
+
+    yuv += offset;
+    rgb = matrix * yuv;
+
+    gl_FragColor = vec4(rgb, 1);
+    //__SHADER_BODY_REPLACER__
+}
+)";
+
+const char* SHADER_BODY_YVYU422 = R"(
+uniform vec2 videoSize;
+void main()
+{
+    MEDIUMP vec3 yuv;
+    LOWP vec3 rgb;
+
+    MEDIUMP vec4 yvyu = TEXTURE2D(tex1, v_texCoord);
+    if (mod(round(v_texCoord.x * videoSize.x),2.0) == 1.0) {
+        yuv.x = yvyu.r;
+    } else {
+        yuv.x = TEXTURE2D(tex1, vec2(v_texCoord.x - 1.0 / videoSize.x,v_texCoord.y)).b;
+    }
+    yuv.y = yvyu.a;
+    yuv.z = yvyu.g;
+
+    yuv += offset;
+    rgb = matrix * yuv;
+
+    gl_FragColor = vec4(rgb, 1);
+    //__SHADER_BODY_REPLACER__
+}
+)";
+
+const char* SHADER_BODY_UYVY422 = R"(
+uniform vec2 videoSize;
+void main()
+{
+    MEDIUMP vec3 yuv;
+    LOWP vec3 rgb;
+
+    MEDIUMP vec4 uyvy = TEXTURE2D(tex1, v_texCoord);
+    if (mod(round(v_texCoord.x * videoSize.x),2.0) == 1.0) {
+        yuv.x = uyvy.g;
+    } else {
+        yuv.x = TEXTURE2D(tex1, vec2(v_texCoord.x - 1.0 / videoSize.x,v_texCoord.y)).a;
+    }
+    yuv.y = uyvy.r;
+    yuv.z = uyvy.b;
+
     yuv += offset;
     rgb = matrix * yuv;
 
@@ -329,12 +392,12 @@ TextureGenericOpenGL::TextureGenericOpenGL()
         gl_error = err;\
     }\
 }
-int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture &texture)
+int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture &texture, SamplerMode sampler_mode)
 {
     get_capability();
     const SoftwareFormatPlaner& planers = *TextureIO::planers_of_software_frame(frame.format);
 
-    const GLuint channel_foramt_core[5] = {0,GL_RED,GL_RG,GL_RGB8,GL_RGBA8};
+    const GLuint channel_foramt_core[5] = {0,GL_RED,GL_RG,GL_RGB,GL_RGBA};
     const GLuint channel_foramt_es[5] = {0,GL_LUMINANCE,GL_LUMINANCE_ALPHA,GL_RGB,GL_RGBA};
     const GLuint* channel_format = gles_ ? channel_foramt_es : channel_foramt_core;
 
@@ -359,11 +422,23 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
         glPixelStorei(GL_UNPACK_ALIGNMENT, _tio_max_align(linesize));
         VGFX_GL_CHECK("TextureGenericOpenGL::upload glPixelStorei(GL_UNPACK_ALIGNMENT)")
 
-        glPixelStorei(GL_UNPACK_ROW_LENGTH,linesize);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH,linesize/planer.channels);
         VGFX_GL_CHECK("TextureGenericOpenGL::upload glPixelStorei(GL_UNPACK_ROW_LENGTH)")
 
         glBindTexture(GL_TEXTURE_2D, texture.context[index]);
         VGFX_GL_CHECK("TextureGenericOpenGL::upload glBindTexture")
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        GLint gl_sampler_filter = GL_LINEAR;
+        if(sampler_mode == kSamplerAuto){
+            if(frame.format == kSoftwareFormatYUYV422 || frame.format == kSoftwareFormatYVYU422 || frame.format == kSoftwareFormatUYVY422){
+                gl_sampler_filter = GL_NEAREST;
+            }
+        }
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_sampler_filter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_sampler_filter);
 
         glTexImage2D(GL_TEXTURE_2D,
                    0,
@@ -423,9 +498,15 @@ std::string TextureGenericOpenGL::reference_shader_software(SoftwareFrameFormat 
     case kSoftwareFormatNV61   :
         shader_string += SHADER_BODY_NV21_NV61_NV42;
         break;
-    case kSoftwareFormatYUYV422   : break;
-    case kSoftwareFormatYVYU422   : break;
-    case kSoftwareFormatUYVY422   : break;
+    case kSoftwareFormatYUYV422   :
+        shader_string += SHADER_BODY_YUYV422;
+        break;
+    case kSoftwareFormatYVYU422   :
+        shader_string += SHADER_BODY_YVYU422;
+        break;
+    case kSoftwareFormatUYVY422   :
+        shader_string += SHADER_BODY_UYVY422;
+        break;
 
     //444 formats
     case kSoftwareFormatI444   :

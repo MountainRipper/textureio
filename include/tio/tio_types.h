@@ -92,6 +92,12 @@ enum RotationMode : int32_t{
   kRotate270 = 270
 };
 
+enum SamplerMode{
+    kSamplerAuto,
+    kSamplerLinear,
+    kSamplerNearest,
+};
+
 struct SoftwareFrame{
     SoftwareFrameFormat format = kSoftwareFormatNone;
     uint32_t width = 0;
