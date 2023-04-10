@@ -1,10 +1,13 @@
 #ifndef MP_TIO_TYPES_H_
 #define MP_TIO_TYPES_H_
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <memory>
 
-#define kErrorInvalidTextureId -1
+#define kErrorInvalidFrame     -1
+#define kErrorInvalidTextureId -2
+#define kErrorFormatNotMatch   -3
 
 namespace mr {
 namespace tio {
@@ -210,6 +213,25 @@ static const SoftwareFormatPlaner g_software_format_planers[kSoftwareFormatCount
 struct SoftwareFrameWithMemory : public SoftwareFrame{
 
 public:
+    SoftwareFrameWithMemory(){}
+    SoftwareFrameWithMemory(const SoftwareFrameWithMemory& other){
+        memcpy(this,&other,sizeof(SoftwareFrame));
+        for(int index = 0; index < 4 ; index++)
+            plane_size[index] = other.plane_size[index];
+        data_buffer_ = other.data_buffer_;
+        frame_memory_ = other.frame_memory_;
+    }
+    SoftwareFrameWithMemory(SoftwareFrameFormat format,uint32_t width, uint32_t height){
+        this->format = format;
+        this->width = width;
+        this->height = height;
+    }
+    SoftwareFrameWithMemory(SoftwareFrameFormat format,uint32_t width, uint32_t height,uint8_t* data){
+        this->format = format;
+        this->width = width;
+        this->height = height;
+        attach(data);
+    }
     //alloc buffer and fill data,linesize
     void alloc(){        
         uint32_t bpp = g_soft_format_bpps[format];
@@ -222,6 +244,7 @@ public:
         data_buffer_ = data;
         fill_plane();
     }
+
 public:
     uint32_t plane_size[4];
     uint8_t* data_buffer_ = nullptr;
@@ -231,88 +254,15 @@ private:
         uint8_t depth = 8;
         line_size[0] = line_size[1] = line_size[2] = line_size[3] = 0;
         data[0] = data[1] = data[2] = data[3] = nullptr;
-        /*if(format == kSoftwareFormatI420 ||
-           format == kSoftwareFormatYV12){
-            line_size[0] = width;
-            line_size[1] = line_size[2] = width/2;
 
-            data[0] = data_buffer_;
-            auto plane_u = data[0] + width * height;
-            auto plane_v = data[1] + width * height / 4;
-            std::swap(plane_u,plane_v);
-            data[1] = plane_u;
-            data[2] = plane_v;
-        }
-        else if(format == kSoftwareFormatNV12 ||
-                format == kSoftwareFormatNV21){
-            line_size[0] = width;
-            line_size[1] = width;
-
-            data[0] = data_buffer_;
-            data[1] = data[0] + width * height;
-        }
-        else if(format == kSoftwareFormatI422){
-            line_size[0] = width;
-            line_size[1] = width/2;
-            line_size[2] = width/2;
-
-            data[0] = data_buffer_;
-            data[1] = data[0] + width * height;
-            data[2] = data[1] + width * height / 2;
-        }
-        else if(format == kSoftwareFormatNV16 ||
-                format == kSoftwareFormatNV61){
-            line_size[0] = width;
-            line_size[1] = width;
-
-            data[0] = data_buffer_;
-            data[1] = data[0] + width * height;
-        }
-        else if(format == kSoftwareFormatYUYV422 ||
-                format == kSoftwareFormatYVYU422 ||
-                format == kSoftwareFormatUYVY422){
-            line_size[0] = width*2;
-            data[0] = data_buffer_;
-        }
-        else if(format == kSoftwareFormatI444){
-            line_size[0] = line_size[1] = line_size[2] = width;
-        }
-        else if(format == kSoftwareFormatNV24 ||
-                format == kSoftwareFormatNV42){
-            line_size[0] = width;
-            line_size[1] = width*2;
-
-            data[0] = data_buffer_;
-            data[1] = data[0] + width * height;
-        }
-        else if(format == kSoftwareFormatYUV444 ||
-                format == kSoftwareFormatRGB24  ||
-                format == kSoftwareFormatBGR24){
-            line_size[0] = width*3;
-            data[0] = data_buffer_;
-        }
-        else if(format == kSoftwareFormatRGBA32 ||
-                format == kSoftwareFormatBGRA32 ||
-                format == kSoftwareFormatARGB32 ||
-                format == kSoftwareFormatABGR32){
-            line_size[0] = width*4;
-            data[0] = data_buffer_;
-        }
-        else if(format == kSoftwareFormatGRAY8){
-            line_size[0] = width*1;
-            data[0] = data_buffer_;
-        }
-        else if(format == kSoftwareFormatGRAY8A){
-            line_size[0] = width*2;
-            data[0] = data_buffer_;
-        }*/
         uint8_t* plane_ptr = data_buffer_;
         auto& planes = g_software_format_planers[format].planes;
         for(int index = 0; index < 4; index++){
             auto& plane = planes[index];
             if(plane.channels == 0)
                 break;
-            line_size[index] = (width * plane.scale_x) * plane.channels * depth / 8;
+            uint32_t width_adjust = (width + 1) / 2 * 2;
+            line_size[index] = (width_adjust * plane.scale_x) * plane.channels * depth / 8;
             plane_size[index] = (height * plane.scale_y) * line_size[index];
             data[index] = plane_ptr;
             plane_ptr += plane_size[index];

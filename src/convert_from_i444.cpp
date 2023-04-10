@@ -94,8 +94,8 @@ void ConvertFromI444::register_converter()
                 dest.data[0], dest.line_size[0],
                 source.width, source.height);
 
-        SoftwareFrameWithMemory i422 = { { kSoftwareFormatI422, source.width, source.height } };
-        i422.alloc();
+        SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
+
 
         // half uv width of 444 1W*1H -> 0.5W*1H
         libyuv::ScalePlane(source.data[1], source.line_size[1], source.width, source.height,
@@ -118,8 +118,8 @@ void ConvertFromI444::register_converter()
                   RotationMode rotate,
                   const CropArea& crop_area)->int32_t{
 
-        SoftwareFrameWithMemory i422 = { { kSoftwareFormatI422, source.width, source.height } };
-        i422.alloc();
+        SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
+
         auto i444_to_i422 = ConvertManager::get_convertor(kSoftwareFormatI444,kSoftwareFormatI422);
         i444_to_i422(source,i422,kRotate0,CropArea());
 
@@ -138,8 +138,8 @@ void ConvertFromI444::register_converter()
                   RotationMode rotate,
                   const CropArea& crop_area)->int32_t{
 
-        SoftwareFrameWithMemory i422 = { { kSoftwareFormatI422, source.width, source.height } };
-        i422.alloc();
+        SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
+
         auto i444_to_i422 = ConvertManager::get_convertor(kSoftwareFormatI444,kSoftwareFormatI422);
         i444_to_i422(source,i422,kRotate0,CropArea());
 
@@ -157,8 +157,8 @@ void ConvertFromI444::register_converter()
                   RotationMode rotate,
                   const CropArea& crop_area)->int32_t{
 
-        SoftwareFrameWithMemory i422 = { { kSoftwareFormatI422, source.width, source.height } };
-        i422.alloc();
+        SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
+
         auto i444_to_i422 = ConvertManager::get_convertor(kSoftwareFormatI444,kSoftwareFormatI422);
         i444_to_i422(source,i422,kRotate0,CropArea());
 
@@ -195,8 +195,8 @@ void ConvertFromI444::register_converter()
         int8_t u_plane_index = (dest.format == kSoftwareFormatNV24) ? 1 : 2;
         int8_t v_plane_index = (dest.format == kSoftwareFormatNV24) ? 2 : 1;
 
-        SoftwareFrameWithMemory i444 = { { kSoftwareFormatI444, source.width, source.height } };
-        i444.alloc();
+        SoftwareFrameWithMemory i444 = ConvertManager::thread_temporary_frame(kSoftwareFormatI444, source.width, source.height);
+
 
         libyuv::CopyPlane(source.data[0], source.line_size[0],
             dest.data[0], dest.line_size[0],
@@ -287,8 +287,8 @@ void ConvertFromI444::register_converter()
                   SoftwareFrame& dest,
                   RotationMode rotate,
                   const CropArea& crop_area)->int32_t{
-        SoftwareFrameWithMemory bgra = { { kSoftwareFormatBGRA32, source.width, source.height } };
-        bgra.alloc();
+        SoftwareFrameWithMemory bgra = ConvertManager::thread_temporary_frame(kSoftwareFormatBGRA32, source.width, source.height);
+
         libyuv::I444ToARGB(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
                 source.data[2], source.line_size[2],
@@ -306,8 +306,8 @@ void ConvertFromI444::register_converter()
                   RotationMode rotate,
                   const CropArea& crop_area)->int32_t{
 
-        SoftwareFrameWithMemory bgra = { { kSoftwareFormatBGRA32, source.width, source.height } };
-        bgra.alloc();
+        SoftwareFrameWithMemory bgra = ConvertManager::thread_temporary_frame(kSoftwareFormatBGRA32, source.width, source.height);
+
         libyuv::I444ToARGB(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
                 source.data[2], source.line_size[2],
@@ -336,8 +336,8 @@ void ConvertFromI444::register_converter()
                   SoftwareFrame& dest,
                   RotationMode rotate,
                   const CropArea& crop_area)->int32_t{
-        SoftwareFrameWithMemory alpha = { { kSoftwareFormatGRAY8, source.width, source.height } };
-        alpha.alloc();
+        SoftwareFrameWithMemory alpha = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height);
+
         libyuv::SetPlane(alpha.data[0], alpha.line_size[0], source.width, source.height, 255);
 
         libyuv::MergeUVPlane(source.data[0], source.line_size[0],

@@ -38,8 +38,8 @@ void ConvertToI420::register_converter()
         int8_t u_plane_index = (source.format == kSoftwareFormatNV16) ? 1 : 2;
         int8_t v_plane_index = (source.format == kSoftwareFormatNV16) ? 2 : 1;
 
-        SoftwareFrameWithMemory i422 = { { kSoftwareFormatI422, source.width, source.height } };
-        i422.alloc();
+        SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
+
         libyuv::SplitUVPlane(source.data[1], source.line_size[1],
             i422.data[u_plane_index], i422.line_size[u_plane_index],
             i422.data[v_plane_index], i422.line_size[v_plane_index],
@@ -80,8 +80,8 @@ void ConvertToI420::register_converter()
         int8_t u_plane_index = (source.format == kSoftwareFormatNV24) ? 1 : 2;
         int8_t v_plane_index = (source.format == kSoftwareFormatNV24) ? 2 : 1;
 
-        SoftwareFrameWithMemory i444 = { { kSoftwareFormatI444, source.width, source.height } };
-        i444.alloc();
+        SoftwareFrameWithMemory i444 = ConvertManager::thread_temporary_frame(kSoftwareFormatI444, source.width, source.height);
+
         libyuv::SplitUVPlane(source.data[1], source.line_size[1],
             i444.data[u_plane_index], i444.line_size[u_plane_index],
             i444.data[v_plane_index], i444.line_size[v_plane_index],
@@ -105,8 +105,8 @@ void ConvertToI420::register_converter()
             SoftwareFrame& dest,
             RotationMode rotate,
             const CropArea& crop_area) -> int32_t {
-            SoftwareFrameWithMemory i444 = { { kSoftwareFormatI444, source.width, source.height } };
-            i444.alloc();
+            SoftwareFrameWithMemory i444 = ConvertManager::thread_temporary_frame(kSoftwareFormatI444, source.width, source.height );
+
             libyuv::SplitRGBPlane(source.data[0], source.line_size[0],
                 i444.data[0], i444.line_size[0],
                 i444.data[1], i444.line_size[1],
@@ -141,8 +141,7 @@ void ConvertToI420::register_converter()
             SoftwareFrame& dest,
             RotationMode rotate,
             const CropArea& crop_area) -> int32_t {
-            SoftwareFrameWithMemory alpha = { { kSoftwareFormatGRAY8, source.width, source.height } };
-            alpha.alloc();
+            SoftwareFrameWithMemory alpha = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height);
 
             libyuv::SplitUVPlane(source.data[0], source.line_size[0],
                 dest.data[0], dest.line_size[0],

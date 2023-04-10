@@ -132,6 +132,7 @@ int main(int argc, char *argv[]) {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 
+  glfwWindowHint(GLFW_MAXIMIZED, true);
   window = glfwCreateWindow(win_w, win_h, "SDMP Usecase Test", NULL, NULL);
   if (!window) {
     glfwTerminate();
@@ -277,7 +278,7 @@ int main(int argc, char *argv[]) {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     VGFX_GL_CHECK(mp::Logger::kLogLevelError, "ImGui::GetDrawData()");
 #if defined(__linux)
-    //  usleep(16e3);
+      //usleep(100*1000);
 #endif
 
     glfwSwapBuffers(window);

@@ -110,7 +110,7 @@ const mat3 matrix = mat3( 1.1644,  1.1644,   1.1644,
 )";
 
 
-const char* SHADER_BODY_YUV420P_444P = R"(
+const char* SHADER_BODY_I420_I422_I444 = R"(
 void main()
 {
     MEDIUMP vec3 yuv;
@@ -146,7 +146,7 @@ void main()
 }
 )";
 
-const char* SHADER_BODY_NV12_NV16_NV24_422P = R"(
+const char* SHADER_BODY_NV12_NV16_NV24 = R"(
 void main()
 {
     MEDIUMP vec3 yuv;
@@ -414,9 +414,9 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
 
         if(frame.format == kSoftwareFormatBGRA32 && bgra_support_){
             format = GL_BGRA;
-        }
+        }        
 
-        glActiveTexture(texture.flags[index]);
+        glActiveTexture(GL_TEXTURE0 + texture.flags[index]);
         VGFX_GL_CHECK("TextureGenericOpenGL::upload glActiveTexture")
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, _tio_max_align(linesize));
@@ -437,6 +437,9 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
                 gl_sampler_filter = GL_NEAREST;
             }
         }
+        else if(sampler_mode == kSamplerNearest)
+            gl_sampler_filter = GL_NEAREST;
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_sampler_filter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_sampler_filter);
 
@@ -453,10 +456,15 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
 
         if(texture.program){
             auto location = glGetUniformLocation(texture.program, texture_uniform_name[index]);
-            glUniform1i(location, GL_TEXTURE0 + texture.flags[index]);
+            glUniform1i(location, texture.flags[index]);
         }
     }
-
+    if(texture.program){
+        GLint video_size_location = glGetUniformLocation(texture.program, "videoSize");
+        if(video_size_location >= 0){
+            glUniform2f(video_size_location,frame.width,frame.height);
+        }
+    }
     return 0;
 }
 
@@ -476,13 +484,13 @@ std::string TextureGenericOpenGL::reference_shader_software(SoftwareFrameFormat 
     switch (format) {
     //420 formats
     case kSoftwareFormatI420:
-        shader_string += SHADER_BODY_YUV420P_444P;
+    shader_string += SHADER_BODY_I420_I422_I444;
         break;
     case kSoftwareFormatYV12:
         shader_string += SHADER_BODY_YV12;
         break;
     case kSoftwareFormatNV12:
-        shader_string += SHADER_BODY_NV12_NV16_NV24_422P;
+    shader_string += SHADER_BODY_NV12_NV16_NV24;
         break;///< planar YUV 4:2:0, 12bpp, 1 plane for Y and 1 plane for the UV components, which are interleaved (first byte U and the following byte V)
     case kSoftwareFormatNV21:
         shader_string += SHADER_BODY_NV21_NV61_NV42;
@@ -490,10 +498,10 @@ std::string TextureGenericOpenGL::reference_shader_software(SoftwareFrameFormat 
 
     //422 formats
     case kSoftwareFormatI422   :
-        shader_string += SHADER_BODY_YUV420P_444P;
+    shader_string += SHADER_BODY_I420_I422_I444;
         break;
     case kSoftwareFormatNV16   :
-        shader_string += SHADER_BODY_NV12_NV16_NV24_422P;
+    shader_string += SHADER_BODY_NV12_NV16_NV24;
         break;
     case kSoftwareFormatNV61   :
         shader_string += SHADER_BODY_NV21_NV61_NV42;
@@ -510,10 +518,10 @@ std::string TextureGenericOpenGL::reference_shader_software(SoftwareFrameFormat 
 
     //444 formats
     case kSoftwareFormatI444   :
-        shader_string += SHADER_BODY_YUV420P_444P;
+        shader_string += SHADER_BODY_I420_I422_I444;
         break;
     case kSoftwareFormatNV24      :
-        shader_string += SHADER_BODY_NV12_NV16_NV24_422P;
+        shader_string += SHADER_BODY_NV12_NV16_NV24;
         break;
     case kSoftwareFormatNV42      :
         shader_string += SHADER_BODY_NV21_NV61_NV42;

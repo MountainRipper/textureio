@@ -38,9 +38,9 @@ int32_t TextureioExample::on_init(void *window)
     int channels = 3;//as rgb
     auto image = stbi_load_from_memory((uint8_t*)test_pic_data,test_pic_size,&pic_width_,&pic_height_,&channels,channels);
     assert(channels == 3);
-    test_picture_ = SoftwareFrameWithMemory{{kSoftwareFormatRGB24,(uint32_t)pic_width_,(uint32_t)pic_height_}};
-    test_picture_.alloc();
-    memcpy(test_picture_.data_buffer_,image,pic_width_*pic_height_*3);
+    origin_image_ = SoftwareFrameWithMemory(kSoftwareFormatRGB24,(uint32_t)pic_width_,(uint32_t)pic_height_);
+    origin_image_.alloc();
+    memcpy(origin_image_.data_buffer_,image,pic_width_*pic_height_*3);
     stbi_image_free(image);
 
     convert_to_target_frames();
@@ -82,62 +82,123 @@ int32_t TextureioExample::on_deinit()
 
 int32_t TextureioExample::on_frame()
 {
+    convert_to_target_frames();
+
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
     int index=0;
     int row_columns = 5;
     float item_percent = 1.0 / row_columns;
     int item_width = width_*item_percent;
     int item_height = height_*item_percent;
-    for(int row = 0; row < row_columns; row++){
-        for(int column = 0; column < row_columns; column++){
-            int x = item_percent*column*width_;
-            int y = item_percent*row*height_;
-            int vy = height_ - y - item_height;
 
-            if(index >= kSoftwareFormatCount)
-                break;
+    GraphicTexture texture;
+    texture.api = kGraphicApiOpenGL;
+    for(int index = 0; index < 3; index++){
+        texture.context[index] = textures_[index];
+        texture.flags[index] = texture_unit_base_ + index;
+    }
 
-            SoftwareFrameFormat format = static_cast<SoftwareFrameFormat>(index);
+    auto fill_texture_param = [this](SoftwareFrameFormat format,GraphicTexture& param){
 
-            GraphicTexture texture;
-            texture.api = kGraphicApiOpenGL;
-            for(int index = 0; index < 3; index++){
-                texture.context[index] = textures_[index];
-                texture.flags[index] = GL_TEXTURE0 + texture_unit_base_ + index;
-            }
+    };
+    if(show_source_){
+        texture.program = programs_[source_format_];
+        glUseProgram(texture.program);
+        glFinish();
 
-            GLuint program = programs_[index];
+        MP_TIMER_NEW(timer);
+        TextureIO::software_frame_to_graphic(source_image_,texture,(SamplerMode)sampler_mode_);
+        glFinish();
+        float upload_ms = MP_TIMER_MS_RESET(timer);
 
-            glUseProgram(program);
+        glBindVertexArray(g_vao);
+        glViewport(0,0,width_,height_);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glFinish();
+        float render_ms = MP_TIMER_MS(timer);
 
-            std::shared_ptr<SoftwareFrameWithMemory> frame = target_frames_[index];
-            TextureIO::software_frame_to_graphic(*frame,texture);
+        ImGui::SetNextWindowPos(ImVec2(10,10));
+        ImGui::SetNextWindowBgAlpha(0.15f);
+        std::string win_name = "hint-";
+        win_name += g_soft_format_names[index];
+        ImGui::Begin(win_name.c_str(),NULL,window_flags);
+        ImGui::Text("%s C:%.2fms U:%.2fms R:%.2fms", g_soft_format_names[source_format_],convert_ms_[index],upload_ms,render_ms);
+        ImGui::End();
+    }
+    else{
+        for(int row = 0; row < row_columns; row++){
+            for(int column = 0; column < row_columns; column++){
+                int x = item_percent*column*width_;
+                int y = item_percent*row*height_;
+                int vy = height_ - y - item_height;
 
-            const char* texture_uniform_names[3] = {"tex1","tex2","tex3"};
-            for(int index = 0; index < 3; index++){
-                GLint texture_location = glGetUniformLocation(program, texture_uniform_names[index]);
-                if(texture_location >= 0){
-                    glUniform1i(texture_location, texture_unit_base_+index);
+                if(index >= kSoftwareFormatCount)
+                    break;
+
+                SoftwareFrameFormat format = static_cast<SoftwareFrameFormat>(index);
+                std::shared_ptr<SoftwareFrameWithMemory> frame = target_frames_[index];
+                texture.program = programs_[index];
+
+                glUseProgram(texture.program);
+                glFinish();
+
+                MP_TIMER_NEW(timer);
+                {
+                    TextureIO::software_frame_to_graphic(*frame,texture,(SamplerMode)sampler_mode_);
+                    glFinish();
                 }
+                float upload_ms = MP_TIMER_MS_RESET(timer);
+
+                {
+                    glBindVertexArray(g_vao);
+                    glViewport(x,vy,item_width,item_height);
+                    glDrawArrays(GL_TRIANGLES, 0, 3);
+                    glFinish();
+                }
+                float render_ms = MP_TIMER_MS(timer);
+
+                ImGui::SetNextWindowPos(ImVec2(x,y));
+                ImGui::SetNextWindowBgAlpha(0.15f);
+                std::string win_name = "hint-";
+                win_name += g_soft_format_names[index];
+                ImGui::Begin(win_name.c_str(),NULL,window_flags);
+                ImGui::Text("%s C:%.2fms U:%.2fms R:%.2fms", g_soft_format_names[index],convert_ms_[index]/frames_convert_count_,upload_ms,render_ms);
+                ImGui::End();
+
+                index++;
             }
-            GLint video_size_location = glGetUniformLocation(program, "videoSize");
-            if(video_size_location >= 0){
-                glUniform2f(video_size_location,frame->width,frame->height);
-            }
+        }
+    }
 
-            glBindVertexArray(g_vao);
-            glViewport(x,vy,item_width,item_height);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
 
-            ImGui::SetNextWindowPos(ImVec2(x,y));
-            ImGui::SetNextWindowBgAlpha(0.15f);
-            std::string win_name = "hint-";
-            win_name += g_soft_format_names[index];
-            ImGui::Begin(win_name.c_str(),NULL,window_flags);
-            ImGui::Text("%s", g_soft_format_names[index]);
-            ImGui::End();
 
-            index++;
+    {
+//        window_flags |= ImGuiWindowFlags_NoMove;
+        if(resized_){
+            resized_ = false;
+            auto pos = ImGui::GetMainViewport()->GetCenter();
+            pos.x *= 1.4;
+            pos.y *= 1.8;
+            ImGui::SetNextWindowPos(pos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        }
+
+        ImGui::SetNextWindowBgAlpha(0.35f);
+        ImGui::Begin("Control Panel",NULL,window_flags);
+        int format_old = source_format_;
+        ImGui::SetNextItemWidth(150);
+        ImGui::Combo("InputFormat", &source_format_, g_soft_format_names, IM_ARRAYSIZE(g_soft_format_names));ImGui::SameLine();
+        ImGui::Checkbox("SouceFrame",&show_source_);
+
+        ImGui::Text("Sampler:"); ImGui::SameLine();
+        ImGui::RadioButton("Auto", &sampler_mode_, 0); ImGui::SameLine();
+        ImGui::RadioButton("Linear", &sampler_mode_, 1); ImGui::SameLine();
+        ImGui::RadioButton("Nearest", &sampler_mode_, 2);
+        ImGui::End();
+
+        if(format_old != source_format_){
+            frames_convert_count_ = 0;
+            memset(convert_ms_,0,sizeof(float)*kSoftwareFormatCount);
+            convert_to_target_frames();
         }
     }
     return 0;
@@ -167,6 +228,7 @@ void TextureioExample::resize_callback(int width, int height)
 {
     width_ = width;
     height_ = height;
+    resized_ = true;
 }
 
 void TextureioExample::scroll_callback(double xoffset, double yoffset)
@@ -179,22 +241,26 @@ void TextureioExample::command(std::string command)
 
 void TextureioExample::convert_to_target_frames()
 {
-    SoftwareFrameWithMemory input_image = {{kSoftwareFormatYUYV422,test_picture_.width,test_picture_.height}};
-    input_image.alloc();
-    software_converter_.convert(test_picture_,input_image);
+    frames_convert_count_++;
 
+    source_image_ = SoftwareFrameWithMemory((SoftwareFrameFormat)source_format_,origin_image_.width,origin_image_.height);
+    source_image_.alloc();
+    software_converter_.convert(origin_image_,source_image_);
+
+    MP_TIMER_NEW(aa);
     for(int index = 0; index < kSoftwareFormatCount; index++){
         SoftwareFrameFormat format = static_cast<SoftwareFrameFormat>(index);
 
-        std::shared_ptr<SoftwareFrameWithMemory> dest = std::shared_ptr<SoftwareFrameWithMemory>(new SoftwareFrameWithMemory{{format,test_picture_.width,test_picture_.height}});
+        std::shared_ptr<SoftwareFrameWithMemory> dest = std::shared_ptr<SoftwareFrameWithMemory>(new SoftwareFrameWithMemory(format,origin_image_.width,origin_image_.height));
         dest->alloc();
         target_frames_[index] = dest;
 
-        software_converter_.convert(input_image,*dest);
-        if(format == mr::tio::kSoftwareFormatYVYU422){
-            FILE* f = fopen("test-888x500.yvyu","wb");
-            fwrite(dest->data_buffer_,test_picture_.width*test_picture_.height*2,1,f);
-            fclose(f);
-        }
+        MP_TIMER_NEW(convert_timer);
+        software_converter_.convert(source_image_,*dest);
+        convert_ms_[index] += MP_TIMER_MS(convert_timer);
     }
+    static float totle = 0;
+    totle += MP_TIMER_MS(aa);
+    if(frames_convert_count_%100 == 0)
+        fprintf(stderr,"%.2f\n",totle/frames_convert_count_);
 }

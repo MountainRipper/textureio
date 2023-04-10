@@ -4,7 +4,9 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <set>
 #include <functional>
+#include <thread>
 #include <libyuv.h>
 #include <tio_types.h>
 
@@ -59,12 +61,39 @@ typedef std::function<int32_t(
         RotationMode,
         const CropArea&)> Converter;
 
+class ThreadTemporaryFrame{
+public:
+    SoftwareFrameWithMemory get_temporary_frame(uint32_t width, uint32_t height,SoftwareFrameFormat format)
+    {
+        auto thread_id = std::this_thread::get_id();
+        if(thread_temporary_memory_.find(thread_id) == thread_temporary_memory_.end()){
+            thread_temporary_memory_[thread_id] = SoftwareFrameWithMemory();
+        }
+        SoftwareFrameWithMemory& temporary_memory_ = thread_temporary_memory_[thread_id];
+        if((temporary_memory_.width * temporary_memory_.height) < (width * height)){
+            temporary_memory_ = SoftwareFrameWithMemory(kSoftwareFormatBGRA32,width+2,height);
+            temporary_memory_.alloc();
+        }
+        SoftwareFrameWithMemory temp_frame(format,width,height,temporary_memory_.data_buffer_);
+        return temp_frame;
+    }
+private:
+    std::map<std::thread::id,SoftwareFrameWithMemory> thread_temporary_memory_;
+};
+
 class ConvertManager{
 public:
     static void init();
     static void add_converter(SoftwareFrameFormat input,SoftwareFrameFormat output,Converter converter);
     static Converter get_convertor(SoftwareFrameFormat input,SoftwareFrameFormat output);
+
+    static void mark_slower_convertor(SoftwareFrameFormat input,SoftwareFrameFormat output);
+    static bool is_slower_convertor(SoftwareFrameFormat input,SoftwareFrameFormat output);
+
+    static SoftwareFrameWithMemory thread_temporary_frame(SoftwareFrameFormat format, uint32_t width, uint32_t height, uint8_t id = 0);
+    static std::set<uint32_t> slower_converters_;
     static std::map<uint32_t,Converter> converters_;
+    static std::map<uint8_t,ThreadTemporaryFrame> temporary_frames_;
 };
 
 

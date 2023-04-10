@@ -33,11 +33,21 @@ private:
     int width_ = 0;
     int height_ = 0;
 
-    SoftwareFrameWithMemory test_picture_;
-    std::shared_ptr<SoftwareFrameWithMemory> target_frames_[kSoftwareFormatCount];
     SoftwareFrameConvert software_converter_;
+    SoftwareFrameWithMemory origin_image_;
+    SoftwareFrameWithMemory source_image_;
+    std::shared_ptr<SoftwareFrameWithMemory> target_frames_[kSoftwareFormatCount];
+    float convert_ms_[kSoftwareFormatCount] = {0};
+    uint32_t frames_convert_count_ = 0;
+
+    int source_format_ = kSoftwareFormatI420;
+    int sampler_mode_ = kSamplerAuto;
+    bool show_source_ = false;
+
     int pic_width_ = 0;
     int pic_height_ = 0;
+
+    bool resized_ = false;
 };
 
 
