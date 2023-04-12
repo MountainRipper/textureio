@@ -45,14 +45,16 @@ void ConvertToI420::register_converter()
             i422.data[v_plane_index], i422.line_size[v_plane_index],
             source.width / 2, source.height);
         libyuv::CopyPlane(source.data[0], source.line_size[0],
-            dest.data[0], dest.line_size[0],
+            i422.data[0], i422.line_size[0],
             source.width, source.height);
 
-        // half uv height of 422 0.5W*1H -> 0.5W*0.5H
-        libyuv::ScalePlane(i422.data[1], i422.line_size[1], i422.width / 2, i422.height,
-            dest.data[1], dest.line_size[1], dest.width / 2, dest.height / 2, libyuv::kFilterLinear);
-        libyuv::ScalePlane(i422.data[2], i422.line_size[2], i422.width / 2, i422.height,
-            dest.data[2], dest.line_size[2], dest.width / 2, dest.height / 2, libyuv::kFilterLinear);
+        libyuv::I422ToI420(source.data[0], source.line_size[0],
+                i422.data[1], i422.line_size[1],
+                i422.data[2], i422.line_size[2],
+                dest.data[0], dest.line_size[0],
+                dest.data[1], dest.line_size[1],
+                dest.data[2], dest.line_size[2],
+                source.width, source.height);
         return 0;
     };
     ConvertManager::add_converter(kSoftwareFormatNV16, kSoftwareFormatI420, nv16_nv61_to_i420);

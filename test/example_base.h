@@ -7,7 +7,7 @@
 {\
     GLenum gl_error = GL_NO_ERROR;\
     while(GLenum err = glGetError()){\
-        MP_LOG_MORE(level,"OpenGL Call Failed:{} {}",err,mp::fmt_format(format,##__VA_ARGS__));\
+        MR_LOG_MORE(level,"OpenGL Call Failed:{} {}",err,mp::fmt_format(format,##__VA_ARGS__));\
         gl_error = err;\
     }\
 }

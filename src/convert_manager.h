@@ -8,7 +8,7 @@
 #include <functional>
 #include <thread>
 #include <libyuv.h>
-#include <tio_types.h>
+#include <tio/tio_types.h>
 
 using namespace mr::tio;
 
@@ -71,7 +71,7 @@ public:
         }
         SoftwareFrameWithMemory& temporary_memory_ = thread_temporary_memory_[thread_id];
         if((temporary_memory_.width * temporary_memory_.height) < (width * height)){
-            temporary_memory_ = SoftwareFrameWithMemory(kSoftwareFormatBGRA32,width+2,height);
+            temporary_memory_ = SoftwareFrameWithMemory(kSoftwareFormatBGRA32,width+8,height);
             temporary_memory_.alloc();
         }
         SoftwareFrameWithMemory temp_frame(format,width,height,temporary_memory_.data_buffer_);

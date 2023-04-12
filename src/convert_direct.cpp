@@ -7,7 +7,7 @@ void ConvertDirect::register_direct_converter()
     yuv_planer_to_gray();
     yuv_packeted_to_gray();
     //MARK:NV12ToNV24 is slower than nv12->i420->nv24
-    nvxx_convert_uv();
+    //nvxx_convert_uv();
 
     rgb24_to_others();
 }

@@ -25,27 +25,27 @@ public:
     virtual void command(std::string command) override;
 private:
     void convert_to_target_frames();
+    void create_programs();
 private:
     uint32_t textures_[4] = {0};
     uint32_t texture_unit_base_ = 2;
-    uint32_t programs_[kSoftwareFormatCount];    
+    uint32_t programs_[kSoftwareFormatCount] = {0};
     uint32_t g_vao = 0;
     int width_ = 0;
     int height_ = 0;
 
     SoftwareFrameConvert software_converter_;
-    SoftwareFrameWithMemory origin_image_;
+    SoftwareFrameWithMemory origin_image_[2];
     SoftwareFrameWithMemory source_image_;
     std::shared_ptr<SoftwareFrameWithMemory> target_frames_[kSoftwareFormatCount];
     float convert_ms_[kSoftwareFormatCount] = {0};
     uint32_t frames_convert_count_ = 0;
 
-    int source_format_ = kSoftwareFormatI420;
+    int source_format_ = kSoftwareFormatBGRA32;
     int sampler_mode_ = kSamplerAuto;
+    int colorspace_ = kColorSpaceBt601;
+    int origin_image_use_ = 0;
     bool show_source_ = false;
-
-    int pic_width_ = 0;
-    int pic_height_ = 0;
 
     bool resized_ = false;
 };

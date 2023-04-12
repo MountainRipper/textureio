@@ -88,19 +88,19 @@ uniform sampler2D tex4;
 )";
 
 //many code take from libsdl,SALUTE!!
-const char* SHADER_JPEG_CONSTANTS = R"(
-const vec3 offset = vec3(0, -0.501960814, -0.501960814);
-const mat3 matrix = mat3( 1,       1,        1,
-                          0,      -0.3441,   1.772,
-                          1.402,  -0.7141,   0);
-)";
-
 const char* SHADER_BT601_CONSTANTS = R"(
 const vec3 offset = vec3(-0.0627451017, -0.501960814, -0.501960814);
 const mat3 matrix = mat3( 1.1644,  1.1644,   1.1644,
-                          0,      -0.3918,   2.0172,
-                          1.596,  -0.813,    0);
+                          0,       -0.3918,  2.0172,
+                          1.596,   -0.813,   0);
 )";
+const char* SHADER_BT601FULL_CONSTANTS = R"(
+const vec3 offset = vec3(0, -0.501960814, -0.501960814);
+const mat3 matrix = mat3( 1,        1,          1,
+                          0,        -0.34414,   1.772,
+                          1.40200,  -0.71414,   0);
+)";
+
 
 const char* SHADER_BT709_CONSTANTS = R"(
 const vec3 offset = vec3(-0.0627451017, -0.501960814, -0.501960814);
@@ -108,7 +108,25 @@ const mat3 matrix = mat3( 1.1644,  1.1644,   1.1644,
                           0,      -0.2132,   2.1124,
                           1.7927, -0.5329,   0);
 )";
+const char* SHADER_BT709FULL_CONSTANTS = R"(
+const vec3 offset = vec3(0, -0.501960814, -0.501960814);
+const mat3 matrix = mat3( 1,        1,          1,
+                          0,        -0.18732,   1.8556,
+                          1.5748,   -0.46812,   0);
+)";
 
+const char* SHADER_BT2020_CONSTANTS = R"(
+const vec3 offset = vec3(-0.0627451017, -0.501960814, -0.501960814);
+const mat3 matrix = mat3( 1.164384,  1.164384,   1.164384,
+                          0,         -0.187326,  2.14177,
+                          1.67867,   -0.65042,   0);
+)";
+const char* SHADER_BT2020FULL_CONSTANTS = R"(
+const vec3 offset = vec3(0, -0.501960814, -0.501960814);
+const mat3 matrix = mat3( 1,        1,          1,
+                          0,        -0.164553,  1.8814,
+                          1.4746,   -0.571353,  0);
+)";
 
 const char* SHADER_BODY_I420_I422_I444 = R"(
 void main()
@@ -348,7 +366,7 @@ void main()
 const char* SHADER_BODY_GRAY_ALPHA = R"(
 void main()
 {
-    vec2 ra = TEXTURE2D(tex1, v_texCoord).ra;
+    vec2 ra = TEXTURE2D(tex1, v_texCoord).rg;
     gl_FragColor = vec4(ra.x , ra.x, ra.x, ra.y);
     //__SHADER_BODY_REPLACER__
 }
@@ -363,9 +381,11 @@ const char* sharder_textures_define_of_count[]={NULL,
 
 const char* sharder_colorspace_define_of_type[]={"",
     SHADER_BT601_CONSTANTS,
+    SHADER_BT601FULL_CONSTANTS,
     SHADER_BT709_CONSTANTS,
-    SHADER_BT709_CONSTANTS,//fix this
-    SHADER_BT709_CONSTANTS,//fix this
+    SHADER_BT709FULL_CONSTANTS,
+    SHADER_BT2020_CONSTANTS,
+    SHADER_BT2020FULL_CONSTANTS,
 };
 
 

@@ -1,5 +1,6 @@
 #include "convert_to_bgra.h"
 #include "convert_manager.h"
+#include <math.h>
 void ConvertToBGRA::register_converter()
 {
     Converter convert_to_argb = [](
@@ -28,6 +29,38 @@ void ConvertToBGRA::register_converter()
         ConvertManager::add_converter(static_cast<SoftwareFrameFormat>(format_index), kSoftwareFormatBGRA32, convert_to_argb);
     }
 
+    //use direct NV12ToARGB ,so can use special linesize
+    ConvertManager::add_converter(kSoftwareFormatNV12, kSoftwareFormatBGRA32, [](
+                                      const SoftwareFrame& source,
+                                      SoftwareFrame& dest,
+                                      RotationMode rotate,
+                                      const CropArea& crop_area) -> int32_t {
+        int8_t u_plane_index = (source.format == kSoftwareFormatNV12) ? 1 : 2;
+        int8_t v_plane_index = (source.format == kSoftwareFormatNV12) ? 2 : 1;
+
+        libyuv::NV12ToARGB(source.data[0], source.line_size[0],
+                source.data[1], source.line_size[1],
+            dest.data[0], dest.line_size[0],
+            source.width, source.height);
+
+        return 0;
+    });
+    ConvertManager::add_converter(kSoftwareFormatNV21, kSoftwareFormatBGRA32, [](
+                                      const SoftwareFrame& source,
+                                      SoftwareFrame& dest,
+                                      RotationMode rotate,
+                                      const CropArea& crop_area) -> int32_t {
+        int8_t u_plane_index = (source.format == kSoftwareFormatNV12) ? 1 : 2;
+        int8_t v_plane_index = (source.format == kSoftwareFormatNV12) ? 2 : 1;
+
+        libyuv::NV21ToARGB(source.data[0], source.line_size[0],
+                source.data[1], source.line_size[1],
+            dest.data[0], dest.line_size[0],
+            source.width, source.height);
+
+        return 0;
+    });
+
     Converter nv16_nv61_to_argb = [](
                                       const SoftwareFrame& source,
                                       SoftwareFrame& dest,
@@ -41,7 +74,7 @@ void ConvertToBGRA::register_converter()
         libyuv::SplitUVPlane(source.data[1], source.line_size[1],
             i422.data[u_plane_index], i422.line_size[u_plane_index],
             i422.data[v_plane_index], i422.line_size[v_plane_index],
-            source.width / 2, source.height);
+            ceil(source.width / 2.0), source.height);
 
         libyuv::I422ToARGB(source.data[0], source.line_size[0],
             i422.data[1], i422.line_size[1],

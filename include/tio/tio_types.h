@@ -83,9 +83,11 @@ enum GraphicApi : int32_t{
 enum YuvColorSpace : int32_t{
     kColorSpaceNone = 0,
     kColorSpaceBt601,
+    kColorSpaceBt601Full, //AKA JPEG
     kColorSpaceBt709,
+    kColorSpaceBt709Full,
     kColorSpaceBt2020,
-    kColorSpaceBt2100
+    kColorSpaceBt2020Full
 };
 
 enum RotationMode : int32_t{
@@ -214,61 +216,22 @@ struct SoftwareFrameWithMemory : public SoftwareFrame{
 
 public:
     SoftwareFrameWithMemory(){}
-    SoftwareFrameWithMemory(const SoftwareFrameWithMemory& other){
-        memcpy(this,&other,sizeof(SoftwareFrame));
-        for(int index = 0; index < 4 ; index++)
-            plane_size[index] = other.plane_size[index];
-        data_buffer_ = other.data_buffer_;
-        frame_memory_ = other.frame_memory_;
-    }
-    SoftwareFrameWithMemory(SoftwareFrameFormat format,uint32_t width, uint32_t height){
-        this->format = format;
-        this->width = width;
-        this->height = height;
-    }
-    SoftwareFrameWithMemory(SoftwareFrameFormat format,uint32_t width, uint32_t height,uint8_t* data){
-        this->format = format;
-        this->width = width;
-        this->height = height;
-        attach(data);
-    }
+    SoftwareFrameWithMemory(const SoftwareFrameWithMemory& other);
+    SoftwareFrameWithMemory(SoftwareFrameFormat format,uint32_t width, uint32_t height);
+    SoftwareFrameWithMemory(SoftwareFrameFormat format,uint32_t width, uint32_t height,uint8_t* data);
     //alloc buffer and fill data,linesize
-    void alloc(){        
-        uint32_t bpp = g_soft_format_bpps[format];
-        uint32_t bytes = width*height*bpp/8;
-        frame_memory_ = std::shared_ptr<uint8_t>(new uint8_t[bytes],std::default_delete<uint8_t[]>());
-        data_buffer_ = frame_memory_.get();
-        fill_plane();
-    }
-    void attach(uint8_t* data){
-        data_buffer_ = data;
-        fill_plane();
-    }
-
+    void alloc();
+    //attach buffer must be
+    void attach(uint8_t* data);
+    void clone(const SoftwareFrameWithMemory& data);
+private:
+    void fill_plane(uint8_t* data_from = nullptr);
 public:
     uint32_t plane_size[4];
     uint8_t* data_buffer_ = nullptr;
     std::shared_ptr<uint8_t> frame_memory_;
-private:
-    void fill_plane(){
-        uint8_t depth = 8;
-        line_size[0] = line_size[1] = line_size[2] = line_size[3] = 0;
-        data[0] = data[1] = data[2] = data[3] = nullptr;
-
-        uint8_t* plane_ptr = data_buffer_;
-        auto& planes = g_software_format_planers[format].planes;
-        for(int index = 0; index < 4; index++){
-            auto& plane = planes[index];
-            if(plane.channels == 0)
-                break;
-            uint32_t width_adjust = (width + 1) / 2 * 2;
-            line_size[index] = (width_adjust * plane.scale_x) * plane.channels * depth / 8;
-            plane_size[index] = (height * plane.scale_y) * line_size[index];
-            data[index] = plane_ptr;
-            plane_ptr += plane_size[index];
-        }
-    }
 };
+
 
 template<typename T>
 inline T _tio_max_align(T size,uint8_t div_max = 8){

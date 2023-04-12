@@ -53,7 +53,7 @@ void logEglError(const char *name) {
         err = "unknown";
         break;
     }
-    MP_ERROR("{} failed with: {}",name,err);
+    MR_ERROR("{} failed with: {}",name,err);
 }
 
 

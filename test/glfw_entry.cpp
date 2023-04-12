@@ -21,7 +21,7 @@
 #include <ttf/IconsMaterialDesign.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
-#include "imgui_helper.h"
+#include <mr/imgui_mr.h>
 #include "textureio_example.h"
 
 
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
     // glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, win_w, win_h);
     VGFX_GL_CHECK(mp::Logger::kLogLevelError, "glViewport()");
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(.5, .75, .5, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     ImGui_ImplOpenGL3_NewFrame();

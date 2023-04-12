@@ -7,6 +7,7 @@
 #include <stb/stb_image.h>
 #include "logger.h"
 #include "test_pic.h"
+#include "test_png.h"
 static const std::string g_vs_video = R"(
   precision mediump float;
   out vec2 v_texCoord;
@@ -35,12 +36,22 @@ TextureioExample::TextureioExample()
 }
 int32_t TextureioExample::on_init(void *window)
 {
+    int pic_width = 0;
+    int pic_height = 0;
     int channels = 3;//as rgb
-    auto image = stbi_load_from_memory((uint8_t*)test_pic_data,test_pic_size,&pic_width_,&pic_height_,&channels,channels);
+    auto image = stbi_load_from_memory((uint8_t*)test_pic_data,test_pic_size,&pic_width,&pic_height,&channels,channels);
     assert(channels == 3);
-    origin_image_ = SoftwareFrameWithMemory(kSoftwareFormatRGB24,(uint32_t)pic_width_,(uint32_t)pic_height_);
-    origin_image_.alloc();
-    memcpy(origin_image_.data_buffer_,image,pic_width_*pic_height_*3);
+    origin_image_[0] = SoftwareFrameWithMemory(kSoftwareFormatRGB24,(uint32_t)pic_width,(uint32_t)pic_height);
+    origin_image_[0].alloc();
+    memcpy(origin_image_[0].data_buffer_,image,pic_width*pic_height*3);
+    stbi_image_free(image);
+
+    channels = 4;
+    image = stbi_load_from_memory((uint8_t*)test_png_data,test_png_size,&pic_width,&pic_height,&channels,channels);
+    assert(channels == 4);
+    origin_image_[1] = SoftwareFrameWithMemory(kSoftwareFormatRGBA32,(uint32_t)pic_width,(uint32_t)pic_height);
+    origin_image_[1].alloc();
+    memcpy(origin_image_[1].data_buffer_,image,pic_width*pic_height*4);
     stbi_image_free(image);
 
     convert_to_target_frames();
@@ -51,25 +62,7 @@ int32_t TextureioExample::on_init(void *window)
 
     VGFX_GL_CHECK(mp::Logger::kLogLevelError,"create_texture");
 
-    std::string vertex_shader = g_vs_video;
-    auto version = (const char*)glGetString(GL_VERSION);
-    if(version && strstr(version,"OpenGL ES"))
-        vertex_shader = std::string("#version 300 es") + vertex_shader;
-    else
-        vertex_shader = std::string("#version 330") + vertex_shader;
-
-
-    VGFX_GL_CHECK(mp::Logger::kLogLevelError,"glGetString");
-
-    for(int index = 0; index < kSoftwareFormatCount; index++){
-        auto fragment_shader = TextureIO::reference_shader_software(kGraphicApiOpenGL,static_cast<SoftwareFrameFormat>(index));
-        if(version && strstr(version,"OpenGL ES"))
-            fragment_shader = std::string("#version 300 es") + fragment_shader;
-        else
-            fragment_shader = std::string("#version 330") + fragment_shader;
-        //MP_INFO("{}",fragment_shader.c_str());
-        programs_[index] = create_program(vertex_shader.c_str(),fragment_shader.c_str());
-    }
+    create_programs();
 
     glGenVertexArrays(1, &g_vao);
     return 0;
@@ -82,7 +75,7 @@ int32_t TextureioExample::on_deinit()
 
 int32_t TextureioExample::on_frame()
 {
-    convert_to_target_frames();
+    //convert_to_target_frames();
 
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
     int index=0;
@@ -106,16 +99,16 @@ int32_t TextureioExample::on_frame()
         glUseProgram(texture.program);
         glFinish();
 
-        MP_TIMER_NEW(timer);
+        MR_TIMER_NEW(timer);
         TextureIO::software_frame_to_graphic(source_image_,texture,(SamplerMode)sampler_mode_);
         glFinish();
-        float upload_ms = MP_TIMER_MS_RESET(timer);
+        float upload_ms = MR_TIMER_MS_RESET(timer);
 
         glBindVertexArray(g_vao);
         glViewport(0,0,width_,height_);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glFinish();
-        float render_ms = MP_TIMER_MS(timer);
+        float render_ms = MR_TIMER_MS(timer);
 
         ImGui::SetNextWindowPos(ImVec2(10,10));
         ImGui::SetNextWindowBgAlpha(0.15f);
@@ -142,20 +135,20 @@ int32_t TextureioExample::on_frame()
                 glUseProgram(texture.program);
                 glFinish();
 
-                MP_TIMER_NEW(timer);
+                MR_TIMER_NEW(timer);
                 {
                     TextureIO::software_frame_to_graphic(*frame,texture,(SamplerMode)sampler_mode_);
                     glFinish();
                 }
-                float upload_ms = MP_TIMER_MS_RESET(timer);
+                float upload_ms = MR_TIMER_MS_RESET(timer);
 
                 {
                     glBindVertexArray(g_vao);
-                    glViewport(x,vy,item_width,item_height);
+                    glViewport(x,vy,item_width-1,item_height-1);
                     glDrawArrays(GL_TRIANGLES, 0, 3);
                     glFinish();
                 }
-                float render_ms = MP_TIMER_MS(timer);
+                float render_ms = MR_TIMER_MS(timer);
 
                 ImGui::SetNextWindowPos(ImVec2(x,y));
                 ImGui::SetNextWindowBgAlpha(0.15f);
@@ -185,20 +178,39 @@ int32_t TextureioExample::on_frame()
         ImGui::SetNextWindowBgAlpha(0.35f);
         ImGui::Begin("Control Panel",NULL,window_flags);
         int format_old = source_format_;
+        int origin_iamge_old = origin_image_use_;
         ImGui::SetNextItemWidth(150);
         ImGui::Combo("InputFormat", &source_format_, g_soft_format_names, IM_ARRAYSIZE(g_soft_format_names));ImGui::SameLine();
-        ImGui::Checkbox("SouceFrame",&show_source_);
+        ImGui::Checkbox("  ShowSourceOnly",&show_source_);
+
+        ImGui::Text("Image:"); ImGui::SameLine();
+        ImGui::RadioButton("Spectacle", &origin_image_use_, 0); ImGui::SameLine();
+        ImGui::RadioButton("Tiger", &origin_image_use_, 1);
 
         ImGui::Text("Sampler:"); ImGui::SameLine();
         ImGui::RadioButton("Auto", &sampler_mode_, 0); ImGui::SameLine();
         ImGui::RadioButton("Linear", &sampler_mode_, 1); ImGui::SameLine();
         ImGui::RadioButton("Nearest", &sampler_mode_, 2);
+
+        int colorsapce_old_ = colorspace_;
+        ImGui::Text("ColorSpace:"); ImGui::SameLine();
+        ImGui::RadioButton("601", &colorspace_, 1); ImGui::SameLine();
+        ImGui::RadioButton("601F", &colorspace_, 2); ImGui::SameLine();
+        ImGui::RadioButton("709", &colorspace_, 3); ImGui::SameLine();
+        ImGui::RadioButton("709F", &colorspace_, 4); ImGui::SameLine();
+        ImGui::RadioButton("2020", &colorspace_, 5); ImGui::SameLine();
+        ImGui::RadioButton("2020F", &colorspace_, 6);
+
+
         ImGui::End();
 
-        if(format_old != source_format_){
+        if(format_old != source_format_ || origin_iamge_old != origin_image_use_){
             frames_convert_count_ = 0;
             memset(convert_ms_,0,sizeof(float)*kSoftwareFormatCount);
             convert_to_target_frames();
+        }
+        if(colorsapce_old_ != colorspace_){
+            create_programs();
         }
     }
     return 0;
@@ -243,24 +255,53 @@ void TextureioExample::convert_to_target_frames()
 {
     frames_convert_count_++;
 
-    source_image_ = SoftwareFrameWithMemory((SoftwareFrameFormat)source_format_,origin_image_.width,origin_image_.height);
+    SoftwareFrameWithMemory& image = origin_image_[origin_image_use_];
+    source_image_ = SoftwareFrameWithMemory((SoftwareFrameFormat)source_format_,image.width,image.height);
     source_image_.alloc();
-    software_converter_.convert(origin_image_,source_image_);
+    software_converter_.convert(image,source_image_);
 
-    MP_TIMER_NEW(aa);
+    MR_TIMER_NEW(aa);
     for(int index = 0; index < kSoftwareFormatCount; index++){
         SoftwareFrameFormat format = static_cast<SoftwareFrameFormat>(index);
 
-        std::shared_ptr<SoftwareFrameWithMemory> dest = std::shared_ptr<SoftwareFrameWithMemory>(new SoftwareFrameWithMemory(format,origin_image_.width,origin_image_.height));
+        std::shared_ptr<SoftwareFrameWithMemory> dest = std::shared_ptr<SoftwareFrameWithMemory>(new SoftwareFrameWithMemory(format,source_image_.width,source_image_.height));
         dest->alloc();
         target_frames_[index] = dest;
 
-        MP_TIMER_NEW(convert_timer);
+        MR_TIMER_NEW(convert_timer);
         software_converter_.convert(source_image_,*dest);
-        convert_ms_[index] += MP_TIMER_MS(convert_timer);
+        convert_ms_[index] += MR_TIMER_MS(convert_timer);
     }
     static float totle = 0;
-    totle += MP_TIMER_MS(aa);
+    totle += MR_TIMER_MS(aa);
     if(frames_convert_count_%100 == 0)
         fprintf(stderr,"%.2f\n",totle/frames_convert_count_);
+}
+
+void TextureioExample::create_programs()
+{
+    glUseProgram(0);
+    std::string vertex_shader = g_vs_video;
+    auto version = (const char*)glGetString(GL_VERSION);
+    if(version && strstr(version,"OpenGL ES"))
+        vertex_shader = std::string("#version 300 es") + vertex_shader;
+    else
+        vertex_shader = std::string("#version 330") + vertex_shader;
+
+
+    VGFX_GL_CHECK(mp::Logger::kLogLevelError,"glGetString");
+
+    for(int index = 0; index < kSoftwareFormatCount; index++){
+
+        if(programs_[index] != 0){
+            glDeleteProgram(programs_[index]);
+        }
+        auto fragment_shader = TextureIO::reference_shader_software(kGraphicApiOpenGL,static_cast<SoftwareFrameFormat>(index),(YuvColorSpace)colorspace_);
+        if(version && strstr(version,"OpenGL ES"))
+            fragment_shader = std::string("#version 300 es") + fragment_shader;
+        else
+            fragment_shader = std::string("#version 330") + fragment_shader;
+        //MR_INFO("{}",fragment_shader.c_str());
+        programs_[index] = create_program(vertex_shader.c_str(),fragment_shader.c_str());
+    }
 }
