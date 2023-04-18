@@ -57,9 +57,7 @@ const static SoftwareFormatMapping g_software_format_maps[kSoftwareFormatCount] 
 
 typedef std::function<int32_t(
         const SoftwareFrame&,
-        SoftwareFrame&,
-        RotationMode,
-        const CropArea&)> Converter;
+        SoftwareFrame&)> Converter;
 
 class ThreadTemporaryFrame{
 public:

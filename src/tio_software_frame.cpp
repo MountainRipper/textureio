@@ -49,10 +49,7 @@ void SoftwareFrameWithMemory::clone_from(const SoftwareFrameWithMemory &source){
     uint8_t depth = 8;
 
     auto copy_converter = ConvertManager::get_convertor(format,format);
-    copy_converter(source,
-                   *static_cast<SoftwareFrame*>(this),
-                   kRotate0,
-                   CropArea());
+    copy_converter(source,*static_cast<SoftwareFrame*>(this));
 }
 
 SoftwareFrameWithMemory SoftwareFrameWithMemory::clone_new()
@@ -104,7 +101,7 @@ int32_t SoftwareFrameConvert::convert(const SoftwareFrame &source, SoftwareFrame
 
     if(converter){
         fprintf(stderr,"Direct Converter from %s to %s.\n",g_soft_format_names[source_format],g_soft_format_names[dest_format]);
-        converter(source,dest,rotate,crop_area);
+        converter(source,dest);
     }
     else{
         SoftwareFrameFormat intermediate_format = g_software_format_maps[source_format].intermediate_format;
@@ -119,8 +116,8 @@ int32_t SoftwareFrameConvert::convert(const SoftwareFrame &source, SoftwareFrame
 
         SoftwareFrameWithMemory intermediate_frame = {intermediate_format,source.width,source.height};
         intermediate_frame = ConvertManager::thread_temporary_frame(intermediate_format,source.width,source.height,100);
-        converter_to_intermediate(source,intermediate_frame,rotate,crop_area);
-        converter_from_intermediate(intermediate_frame,dest,kRotate0,CropArea());
+        converter_to_intermediate(source,intermediate_frame);
+        converter_from_intermediate(intermediate_frame,dest);
     }
     return 0;
 }

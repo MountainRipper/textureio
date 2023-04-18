@@ -5,21 +5,16 @@ void ConvertToI420::register_converter()
 
     Converter convert_to_i420 = [](
                                     const SoftwareFrame& source,
-                                    SoftwareFrame& dest,
-                                    RotationMode rotate,
-                                    const CropArea& crop_area) -> int32_t {
+                                    SoftwareFrame& dest) -> int32_t {
         auto source_fourcc = g_software_format_maps[source.format];
         auto dest_fourcc = g_software_format_maps[dest.format];
-        int32_t crop_width = (crop_area.crop_width == UINT32_MAX) ? source.width : crop_area.crop_width;
-        int32_t crop_height = (crop_area.crop_height == UINT32_MAX) ? source.height : crop_area.crop_height;
-
         libyuv::ConvertToI420(source.data[0], 0,
             dest.data[0], dest.line_size[0],
             dest.data[1], dest.line_size[1],
             dest.data[2], dest.line_size[2],
-            crop_area.crop_x, crop_area.crop_y,
+            0, 0,
             source.line_size[0] / source_fourcc.stride_unit_0, source.height,
-            crop_width, crop_height,
+            source.width, source.height,
             libyuv::kRotate0,
             source_fourcc.fourcc);
         return 0;
@@ -32,9 +27,7 @@ void ConvertToI420::register_converter()
 
     Converter nv16_nv61_to_i420 = [](
                                       const SoftwareFrame& source,
-                                      SoftwareFrame& dest,
-                                      RotationMode rotate,
-                                      const CropArea& crop_area) -> int32_t {
+                                      SoftwareFrame& dest) -> int32_t {
         int8_t u_plane_index = (source.format == kSoftwareFormatNV16) ? 1 : 2;
         int8_t v_plane_index = (source.format == kSoftwareFormatNV16) ? 2 : 1;
 
@@ -62,9 +55,7 @@ void ConvertToI420::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatYVYU422, kSoftwareFormatI420,
         [](const SoftwareFrame& source,
-            SoftwareFrame& dest,
-            RotationMode rotate,
-            const CropArea& crop_area) -> int32_t {
+            SoftwareFrame& dest) -> int32_t {
 
             libyuv::YUY2ToI420(source.data[0], source.line_size[0],
                 dest.data[0], dest.line_size[0],
@@ -76,9 +67,7 @@ void ConvertToI420::register_converter()
 
     Converter nv24_nv42_to_i420 = [](
                                       const SoftwareFrame& source,
-                                      SoftwareFrame& dest,
-                                      RotationMode rotate,
-                                      const CropArea& crop_area) -> int32_t {
+                                      SoftwareFrame& dest) -> int32_t {
         int8_t u_plane_index = (source.format == kSoftwareFormatNV24) ? 1 : 2;
         int8_t v_plane_index = (source.format == kSoftwareFormatNV24) ? 2 : 1;
 
@@ -104,9 +93,7 @@ void ConvertToI420::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatYUV444, kSoftwareFormatI420,
         [](const SoftwareFrame& source,
-            SoftwareFrame& dest,
-            RotationMode rotate,
-            const CropArea& crop_area) -> int32_t {
+            SoftwareFrame& dest) -> int32_t {
             SoftwareFrameWithMemory i444 = ConvertManager::thread_temporary_frame(kSoftwareFormatI444, source.width, source.height );
 
             libyuv::SplitRGBPlane(source.data[0], source.line_size[0],
@@ -127,10 +114,7 @@ void ConvertToI420::register_converter()
         });
 
     ConvertManager::add_converter(kSoftwareFormatGRAY8, kSoftwareFormatI420,
-        [](const SoftwareFrame& source,
-            SoftwareFrame& dest,
-            RotationMode rotate,
-            const CropArea& crop_area) -> int32_t {
+        [](const SoftwareFrame& source,SoftwareFrame& dest) -> int32_t {
             libyuv::CopyPlane(source.data[0], source.line_size[0],
                 dest.data[0], dest.line_size[0],
                 source.width, source.height);
@@ -140,9 +124,7 @@ void ConvertToI420::register_converter()
         });
     ConvertManager::add_converter(kSoftwareFormatGRAY8A, kSoftwareFormatI420,
         [](const SoftwareFrame& source,
-            SoftwareFrame& dest,
-            RotationMode rotate,
-            const CropArea& crop_area) -> int32_t {
+            SoftwareFrame& dest) -> int32_t {
             SoftwareFrameWithMemory alpha = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height);
 
             libyuv::SplitUVPlane(source.data[0], source.line_size[0],

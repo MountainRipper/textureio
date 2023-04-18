@@ -5,9 +5,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatI420,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::I444ToI420(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
@@ -21,9 +19,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatYV12,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
         libyuv::I444ToI420(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
                 source.data[2], source.line_size[2],
@@ -36,9 +32,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatNV12,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
         libyuv::I444ToNV12(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
                 source.data[2], source.line_size[2],
@@ -50,9 +44,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatNV21,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::I444ToNV21(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
@@ -66,9 +58,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatI422,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::CopyPlane(source.data[0], source.line_size[0],
                 dest.data[0], dest.line_size[0],
@@ -84,9 +74,7 @@ void ConvertFromI444::register_converter()
     });
 
     Converter i444_to_nv16_nv61 = [](const SoftwareFrame& source,
-                                      SoftwareFrame& dest,
-                                      RotationMode rotate,
-                                      const CropArea& crop_area) -> int32_t {
+                                      SoftwareFrame& dest) -> int32_t {
         int8_t u_plane_index = (dest.format == kSoftwareFormatNV16) ? 1 : 2;
         int8_t v_plane_index = (dest.format == kSoftwareFormatNV16) ? 2 : 1;
 
@@ -113,15 +101,12 @@ void ConvertFromI444::register_converter()
     ConvertManager::add_converter(kSoftwareFormatI444, kSoftwareFormatNV61, i444_to_nv16_nv61);
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatYUYV422,
-                                  [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                                  [](const SoftwareFrame& source,SoftwareFrame& dest)->int32_t{
 
         SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
 
         auto i444_to_i422 = ConvertManager::get_convertor(kSoftwareFormatI444,kSoftwareFormatI422);
-        i444_to_i422(source,i422,kRotate0,CropArea());
+        i444_to_i422(source,i422);
 
         libyuv::I422ToYUY2(i422.data[0], i422.line_size[0],
                 i422.data[1], i422.line_size[1],
@@ -133,15 +118,12 @@ void ConvertFromI444::register_converter()
     });
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatYVYU422,
-                  [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  [](const SoftwareFrame& source,SoftwareFrame& dest)->int32_t{
 
         SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
 
         auto i444_to_i422 = ConvertManager::get_convertor(kSoftwareFormatI444,kSoftwareFormatI422);
-        i444_to_i422(source,i422,kRotate0,CropArea());
+        i444_to_i422(source,i422);
 
         libyuv::I422ToYUY2(i422.data[0], i422.line_size[0],
                 i422.data[2], i422.line_size[2],
@@ -152,15 +134,12 @@ void ConvertFromI444::register_converter()
     });
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatUYVY422,
-                  [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  [](const SoftwareFrame& source,SoftwareFrame& dest)->int32_t{
 
         SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
 
         auto i444_to_i422 = ConvertManager::get_convertor(kSoftwareFormatI444,kSoftwareFormatI422);
-        i444_to_i422(source,i422,kRotate0,CropArea());
+        i444_to_i422(source,i422);
 
         libyuv::I422ToUYVY(i422.data[0], i422.line_size[0],
                 i422.data[1], i422.line_size[1],
@@ -173,9 +152,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatI444,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::I444Copy(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
@@ -189,9 +166,7 @@ void ConvertFromI444::register_converter()
     });
 
     Converter i444_to_nv24_nv42 = [](const SoftwareFrame& source,
-                                      SoftwareFrame& dest,
-                                      RotationMode rotate,
-                                      const CropArea& crop_area) -> int32_t {
+                                      SoftwareFrame& dest) -> int32_t {
         int8_t u_plane_index = (dest.format == kSoftwareFormatNV24) ? 1 : 2;
         int8_t v_plane_index = (dest.format == kSoftwareFormatNV24) ? 2 : 1;
 
@@ -213,9 +188,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatYUV444,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::MergeRGBPlane(source.data[0], source.line_size[0],
             source.data[1], source.line_size[1],
@@ -228,9 +201,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatRGB24,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::I444ToRAW(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
@@ -242,9 +213,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatBGR24,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::I444ToRGB24(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
@@ -256,9 +225,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatRGBA32,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::I444ToABGR(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
@@ -270,9 +237,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatBGRA32,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::I444ToARGB(source.data[0], source.line_size[0],
                 source.data[1], source.line_size[1],
@@ -284,9 +249,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatARGB32,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
         SoftwareFrameWithMemory bgra = ConvertManager::thread_temporary_frame(kSoftwareFormatBGRA32, source.width, source.height);
 
         libyuv::I444ToARGB(source.data[0], source.line_size[0],
@@ -302,9 +265,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatABGR32,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         SoftwareFrameWithMemory bgra = ConvertManager::thread_temporary_frame(kSoftwareFormatBGRA32, source.width, source.height);
 
@@ -321,9 +282,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatGRAY8,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
 
         libyuv::CopyPlane(source.data[0], source.line_size[0],
                 dest.data[0], dest.line_size[0],
@@ -333,9 +292,7 @@ void ConvertFromI444::register_converter()
 
     ConvertManager::add_converter(kSoftwareFormatI444,kSoftwareFormatGRAY8A,
                   [](const SoftwareFrame& source,
-                  SoftwareFrame& dest,
-                  RotationMode rotate,
-                  const CropArea& crop_area)->int32_t{
+                  SoftwareFrame& dest)->int32_t{
         SoftwareFrameWithMemory alpha = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height);
 
         libyuv::SetPlane(alpha.data[0], alpha.line_size[0], source.width, source.height, 255);
