@@ -1,6 +1,7 @@
 #ifndef MP_VIDEO2HW_H_
 #define MP_VIDEO2HW_H_
 #include "tio_types.h"
+#include <map>
 namespace mr {
 namespace tio {
 
@@ -21,6 +22,12 @@ public:
 
     static const std::string reference_shader_software(GraphicApi api,SoftwareFrameFormat format,YuvColorSpace color_space = kColorSpaceBt601,float version = 0);
     static const char* reference_shader_hardware(GraphicApi api,HardwareFrameFormat format,float version);
+
+    static int32_t create_texture(const std::string& image,
+                                   GraphicTexture &texture,
+                                   std::map<std::string,CropArea>& areas,
+                                   SamplerMode sampler_mode = kSamplerAuto);
+    static int32_t release_texture(GraphicApi api,uint64_t texture_id);
 };
 
 

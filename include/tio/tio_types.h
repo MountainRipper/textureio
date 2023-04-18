@@ -8,6 +8,7 @@
 #define kErrorInvalidFrame     -1
 #define kErrorInvalidTextureId -2
 #define kErrorFormatNotMatch   -3
+#define kErrorAllocTexture     -4
 
 namespace mr {
 namespace tio {
@@ -121,9 +122,13 @@ struct GraphicTexture{
     GraphicApi api = kGraphicApiNone;
     //if provide,auto bind uploaded texture to program
     uint64_t program = 0;
+    //OpenGL: texture id
     uint64_t context[4] = {0,0,0,0};
-    //OpenGL: Texture unit, GL_TEXTURE[0...n]
+    //OpenGL: texture unit x, use as 'GL_TEXTURE0 + x'
     uint64_t flags[4] = {0,0,0,0};
+
+    uint32_t width  = 0;
+    uint32_t height = 0;
 };
 
 struct Planer{
@@ -221,9 +226,10 @@ public:
     SoftwareFrameWithMemory(SoftwareFrameFormat format,uint32_t width, uint32_t height,uint8_t* data);
     //alloc buffer and fill data,linesize
     void alloc();
-    //attach buffer must be
+    //attach buffer must be no padding linesize
     void attach(uint8_t* data);
-    void clone(const SoftwareFrameWithMemory& data);
+    void clone_from(const SoftwareFrameWithMemory& data);
+    SoftwareFrameWithMemory clone_new();
 private:
     void fill_plane(uint8_t* data_from = nullptr);
 public:

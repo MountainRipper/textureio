@@ -1,8 +1,8 @@
 #include <cstring>
 #include <sstream>
 #include <stdio.h>
-#include <tio/tio_hardware_graphic.h>
 #include <vector>
+#include <tio/tio_hardware_graphic.h>
 #include "texture_generic_opengl.h"
 using namespace mr::tio;
 
@@ -485,7 +485,37 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
             glUniform2f(video_size_location,frame.width,frame.height);
         }
     }
+    texture.width = frame.width;
+    texture.height = frame.height;
     return 0;
+}
+
+uint64_t TextureGenericOpenGL::create_texture(const SoftwareFrame &frame,GraphicTexture& texture,SamplerMode sampler_mode)
+{
+    int planes = g_software_format_planers[frame.format].count;
+    GLuint texture_ids[4] = {0};
+    glGenTextures(planes,texture_ids);
+
+    texture.api = kGraphicApiOpenGL;
+    for(int index = 0; index < planes; index++){
+        texture.context[index] = texture_ids[index];
+        texture.flags[0] = 1 + index;
+        if(texture_ids[index] == 0)
+            return kErrorAllocTexture;
+    }
+    upload(frame,texture,kSamplerLinear);
+
+    return 0;
+}
+
+int32_t TextureGenericOpenGL::release_texture(uint64_t texture_id)
+{
+    GLuint id = texture_id;
+    if(texture_id){
+        glDeleteTextures(1,&id);
+        return 0;
+    }
+    return kErrorInvalidTextureId;
 }
 
 std::string TextureGenericOpenGL::reference_shader_software(SoftwareFrameFormat format,YuvColorSpace color_space)

@@ -1,13 +1,16 @@
-#include "textureio_example.h"
+#include "example_textureio.h"
 #include <glad/egl.h>
 #include <glad/gl.h>
 #include <cstring>
-#include <imgui.h>
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
-#include "logger.h"
 #include "test_pic.h"
 #include "test_png.h"
+#include "glad/gl.h"
+#include <imgui.h>
+#include <imgui_internal.h>
+
+MR_MR_SDL_RUNNER_SHOWCASE(TextureioExample)
+
 static const std::string g_vs_video = R"(
   precision mediump float;
   out vec2 v_texCoord;
@@ -19,39 +22,43 @@ static const std::string g_vs_video = R"(
     gl_Position = vec4(x, -y, 0, 1);
 })";
 
-static inline unsigned int decode_85byte(char c){ return c >= '\\' ? c-36 : c-35; }
-static void  decode_base85(const unsigned char* src, unsigned char* dst)
-{
-    while (*src)
-    {
-        unsigned int tmp = decode_85byte(src[0]) + 85 * (decode_85byte(src[1]) + 85 * (decode_85byte(src[2]) + 85 * (decode_85byte(src[3]) + 85 * decode_85byte(src[4]))));
-        dst[0] = ((tmp >> 0) & 0xFF); dst[1] = ((tmp >> 8) & 0xFF); dst[2] = ((tmp >> 16) & 0xFF); dst[3] = ((tmp >> 24) & 0xFF);   // We can't assume little-endianness.
-        src += 5;
-        dst += 4;
-    }
-}
 TextureioExample::TextureioExample()
 {
 
 }
-int32_t TextureioExample::on_init(void *window)
+
+int32_t TextureioExample::on_set_params(cxxopts::Options &options)
 {
+    return 0;
+}
+
+int32_t TextureioExample::on_pre_init(cxxopts::ParseResult &options_result,uint32_t& window_flags)
+{
+    return 0;
+}
+
+int32_t TextureioExample::on_init(void *window,int width, int height)
+{
+    width_ = width;
+    height_ = height;
+    resized_ = true;
+
     int pic_width = 0;
     int pic_height = 0;
     int channels = 3;//as rgb
     auto image = stbi_load_from_memory((uint8_t*)test_pic_data,test_pic_size,&pic_width,&pic_height,&channels,channels);
     assert(channels == 3);
-    origin_image_[0] = SoftwareFrameWithMemory(kSoftwareFormatRGB24,(uint32_t)pic_width,(uint32_t)pic_height);
-    origin_image_[0].alloc();
-    memcpy(origin_image_[0].data_buffer_,image,pic_width*pic_height*3);
+    auto copy_temp = SoftwareFrameWithMemory(kSoftwareFormatRGB24,(uint32_t)pic_width,(uint32_t)pic_height);
+    copy_temp.attach(image);
+    origin_image_[0] = copy_temp.clone_new();
     stbi_image_free(image);
 
     channels = 4;
     image = stbi_load_from_memory((uint8_t*)test_png_data,test_png_size,&pic_width,&pic_height,&channels,channels);
     assert(channels == 4);
-    origin_image_[1] = SoftwareFrameWithMemory(kSoftwareFormatRGBA32,(uint32_t)pic_width,(uint32_t)pic_height);
-    origin_image_[1].alloc();
-    memcpy(origin_image_[1].data_buffer_,image,pic_width*pic_height*4);
+    copy_temp = SoftwareFrameWithMemory(kSoftwareFormatRGBA32,(uint32_t)pic_width,(uint32_t)pic_height);
+    copy_temp.attach(image);
+    origin_image_[1] = copy_temp.clone_new();
     stbi_image_free(image);
 
     convert_to_target_frames();
@@ -60,7 +67,7 @@ int32_t TextureioExample::on_init(void *window)
     textures_[1] = create_texture(128,128,128);
     textures_[2] = create_texture(128,128,128);
 
-    VGFX_GL_CHECK(mp::Logger::kLogLevelError,"create_texture");
+    MR_GL_CHECK(mr::Logger::kLogLevelError,"create_texture");
 
     create_programs();
 
@@ -76,6 +83,10 @@ int32_t TextureioExample::on_deinit()
 int32_t TextureioExample::on_frame()
 {
     //convert_to_target_frames();
+
+    glClearColor(.5, .75, .5, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
     int index=0;
@@ -201,7 +212,6 @@ int32_t TextureioExample::on_frame()
         ImGui::RadioButton("2020", &colorspace_, 5); ImGui::SameLine();
         ImGui::RadioButton("2020F", &colorspace_, 6);
 
-
         ImGui::End();
 
         if(format_old != source_format_ || origin_iamge_old != origin_image_use_){
@@ -216,20 +226,19 @@ int32_t TextureioExample::on_frame()
     return 0;
 }
 
-void TextureioExample::button_callback(int bt, int action, int mods)
+void TextureioExample::button_callback(int bt, int type, int clicks, double x, double y)
 {
+
 }
+
 
 void TextureioExample::cursor_callback(double x, double y)
 {
 }
 
-void TextureioExample::key_callback(int key, int scancode, int action, int mods)
+void TextureioExample::key_callback(int key, int type, int scancode, int mods)
 {
-}
 
-void TextureioExample::char_callback(unsigned int key)
-{
 }
 
 void TextureioExample::error_callback(int err, const char *desc)
@@ -243,9 +252,6 @@ void TextureioExample::resize_callback(int width, int height)
     resized_ = true;
 }
 
-void TextureioExample::scroll_callback(double xoffset, double yoffset)
-{
-}
 
 void TextureioExample::command(std::string command)
 {
@@ -289,7 +295,7 @@ void TextureioExample::create_programs()
         vertex_shader = std::string("#version 330") + vertex_shader;
 
 
-    VGFX_GL_CHECK(mp::Logger::kLogLevelError,"glGetString");
+    MR_GL_CHECK(mr::Logger::kLogLevelError,"glGetString");
 
     for(int index = 0; index < kSoftwareFormatCount; index++){
 

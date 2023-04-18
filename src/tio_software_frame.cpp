@@ -40,9 +40,26 @@ void SoftwareFrameWithMemory::attach(uint8_t *data){
     fill_plane();
 }
 
-void SoftwareFrameWithMemory::clone(const SoftwareFrameWithMemory &data){
-    if(!data_buffer_)
-        alloc();
+void SoftwareFrameWithMemory::clone_from(const SoftwareFrameWithMemory &source){
+    this->format = format;
+    this->width = width;
+    this->height = height;
+    alloc();
+
+    uint8_t depth = 8;
+
+    auto copy_converter = ConvertManager::get_convertor(format,format);
+    copy_converter(source,
+                   *static_cast<SoftwareFrame*>(this),
+                   kRotate0,
+                   CropArea());
+}
+
+SoftwareFrameWithMemory SoftwareFrameWithMemory::clone_new()
+{
+    SoftwareFrameWithMemory new_frame = *this;
+    new_frame.clone_from(*this);
+    return new_frame;
 }
 
 void SoftwareFrameWithMemory::fill_plane(uint8_t *data_from){
