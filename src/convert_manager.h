@@ -88,6 +88,8 @@ public:
     static void mark_slower_convertor(SoftwareFrameFormat input,SoftwareFrameFormat output);
     static bool is_slower_convertor(SoftwareFrameFormat input,SoftwareFrameFormat output);
 
+    static int32_t crop_rotate_scale(const SoftwareFrame& source, SoftwareFrame& dest, RotationMode rotate,bool crop = true,bool to_intermediate_only = false,SamplerMode sampler_mode = kSamplerLinear);
+
     static SoftwareFrameWithMemory thread_temporary_frame(SoftwareFrameFormat format, uint32_t width, uint32_t height, uint8_t id = 0);
     static std::set<uint32_t> slower_converters_;
     static std::map<uint32_t,Converter> converters_;

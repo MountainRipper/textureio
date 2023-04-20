@@ -10,7 +10,7 @@ class SoftwareFrameConvert
 public:
     SoftwareFrameConvert();
 
-    int32_t convert(const SoftwareFrame& source,SoftwareFrame& dest,RotationMode rotate = kRotate0,const CropArea& crop_area=CropArea());
+    int32_t convert(const SoftwareFrame& source,SoftwareFrame& dest,RotationMode rotate = kRotate0,bool use_crop = false);
 };
 
 }//namespace tio

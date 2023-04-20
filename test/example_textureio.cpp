@@ -155,7 +155,14 @@ int32_t TextureioExample::on_frame()
 
                 {
                     glBindVertexArray(g_vao);
-                    glViewport(x,vy,item_width-1,item_height-1);
+                    FrameArea area;
+                    area.aspect_crop(item_width-2,item_height-2,frame->width*1.0/frame->height);
+
+                    glViewport(x + area.x,
+                               vy + area.y,
+                               area.width,
+                               area.height);
+
                     glDrawArrays(GL_TRIANGLES, 0, 3);
                     glFinish();
                 }
@@ -189,7 +196,7 @@ int32_t TextureioExample::on_frame()
         ImGui::SetNextWindowBgAlpha(0.35f);
         ImGui::Begin("Control Panel",NULL,window_flags);
         int format_old = source_format_;
-        int origin_iamge_old = origin_image_use_;
+        int origin_image_old = origin_image_use_;
         ImGui::SetNextItemWidth(150);
         ImGui::Combo("InputFormat", &source_format_, g_soft_format_names, IM_ARRAYSIZE(g_soft_format_names));ImGui::SameLine();
         ImGui::Checkbox("  ShowSourceOnly",&show_source_);
@@ -198,13 +205,30 @@ int32_t TextureioExample::on_frame()
         ImGui::RadioButton("Spectacle", &origin_image_use_, 0); ImGui::SameLine();
         ImGui::RadioButton("Tiger", &origin_image_use_, 1);
 
-        ImGui::Text("Sampler:"); ImGui::SameLine();
+        int rotate_old_ = rotate_;
+        ImGui::Text("Software Rotate:"); ImGui::SameLine();
+        ImGui::RadioButton("0", &rotate_, 0); ImGui::SameLine();
+        ImGui::RadioButton("90", &rotate_, 90); ImGui::SameLine();
+        ImGui::RadioButton("180", &rotate_, 180); ImGui::SameLine();
+        ImGui::RadioButton("270", &rotate_, 270);
+
+        float old_ratio = crop_aspect_ratio_;
+        bool crop_mode_old_ = crop_mode_;
+        ImGui::Text("Software Aspect Ratio:"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
+        ImGui::DragFloat("##ratio",&crop_aspect_ratio_, (crop_aspect_ratio_<=1?0.05:0.2), 0.2, 5.0,"%.2f"); ImGui::SameLine();
+        ImGui::Checkbox("Crop",&crop_mode_); ImGui::SameLine();
+        if(ImGui::Button("Reset")){
+            crop_aspect_ratio_ = 0;
+            crop_mode_ = false;
+        }
+
+        ImGui::Text("Render Sampler:"); ImGui::SameLine();
         ImGui::RadioButton("Auto", &sampler_mode_, 0); ImGui::SameLine();
         ImGui::RadioButton("Linear", &sampler_mode_, 1); ImGui::SameLine();
         ImGui::RadioButton("Nearest", &sampler_mode_, 2);
 
         int colorsapce_old_ = colorspace_;
-        ImGui::Text("ColorSpace:"); ImGui::SameLine();
+        ImGui::Text("Render ColorSpace:"); ImGui::SameLine();
         ImGui::RadioButton("601", &colorspace_, 1); ImGui::SameLine();
         ImGui::RadioButton("601F", &colorspace_, 2); ImGui::SameLine();
         ImGui::RadioButton("709", &colorspace_, 3); ImGui::SameLine();
@@ -214,7 +238,10 @@ int32_t TextureioExample::on_frame()
 
         ImGui::End();
 
-        if(format_old != source_format_ || origin_iamge_old != origin_image_use_){
+        if(origin_image_old != origin_image_use_ || rotate_old_ != rotate_)
+            crop_aspect_ratio_ = 0;
+
+        if(format_old != source_format_ || origin_image_old != origin_image_use_ || rotate_old_ != rotate_ || old_ratio != crop_aspect_ratio_ || crop_mode_old_ != crop_mode_){
             frames_convert_count_ = 0;
             memset(convert_ms_,0,sizeof(float)*kSoftwareFormatCount);
             convert_to_target_frames();
@@ -266,16 +293,31 @@ void TextureioExample::convert_to_target_frames()
     source_image_.alloc();
     software_converter_.convert(image,source_image_);
 
+    int convert_width = source_image_.width;
+    int convert_height = source_image_.height;
+    if(rotate_ == 90 || rotate_ == 270){
+        std::swap(convert_width,convert_height);
+    }
+    if(crop_aspect_ratio_ == 0){
+        crop_aspect_ratio_ = convert_width * 1.0 / convert_height;
+    }
+
+    FrameArea final_size;
+    final_size.aspect_crop(convert_width,convert_height,crop_aspect_ratio_);
+    final_size.width = (final_size.width+1) / 2 * 2;
+    final_size.height = (final_size.height+1) / 2 * 2;
+
+    fprintf(stderr,"Final size %dx%d\n",final_size.width,final_size.height);
+
     MR_TIMER_NEW(aa);
     for(int index = 0; index < kSoftwareFormatCount; index++){
         SoftwareFrameFormat format = static_cast<SoftwareFrameFormat>(index);
-
-        std::shared_ptr<SoftwareFrameWithMemory> dest = std::shared_ptr<SoftwareFrameWithMemory>(new SoftwareFrameWithMemory(format,source_image_.width,source_image_.height));
+        std::shared_ptr<SoftwareFrameWithMemory> dest = std::shared_ptr<SoftwareFrameWithMemory>(new SoftwareFrameWithMemory(format,final_size.width,final_size.height));
         dest->alloc();
         target_frames_[index] = dest;
 
         MR_TIMER_NEW(convert_timer);
-        software_converter_.convert(source_image_,*dest);
+        software_converter_.convert(source_image_,*dest,(RotationMode)rotate_,crop_mode_);
         convert_ms_[index] += MR_TIMER_MS(convert_timer);
     }
     static float totle = 0;

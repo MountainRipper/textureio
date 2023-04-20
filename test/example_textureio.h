@@ -44,8 +44,11 @@ private:
     int source_format_ = kSoftwareFormatBGRA32;
     int sampler_mode_ = kSamplerAuto;
     int colorspace_ = kColorSpaceBt601;
+    int rotate_ = kRotate0;
+    float crop_aspect_ratio_ = 0;
     int origin_image_use_ = 0;
     bool show_source_ = false;
+    bool crop_mode_ = false;
 
     bool resized_ = false;
 };

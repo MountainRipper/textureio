@@ -37,7 +37,7 @@ const std::string TextureIO::reference_shader_software(GraphicApi api, SoftwareF
 
 int32_t TextureIO::create_texture(const std::string& image,
                                    GraphicTexture &texture,
-                                   std::map<std::string,CropArea>& areas,
+                                  std::map<std::string,FrameArea>& areas,
                                    SamplerMode sampler_mode)
 {
     std::filesystem::path image_path = image;
@@ -54,11 +54,11 @@ int32_t TextureIO::create_texture(const std::string& image,
         image_path = image_path.parent_path() / image_menifest["imageFile"].get<std::string>();
 
         for(auto& item : image_menifest["imageAreas"].items()){
-            CropArea area;
-            area.crop_x = item.value()["x"].get<int>();
-            area.crop_y = item.value()["y"].get<int>();
-            area.crop_width = item.value()["w"].get<int>();
-            area.crop_height = item.value()["h"].get<int>();
+            FrameArea area;
+            area.x = item.value()["x"].get<int>();
+            area.y = item.value()["y"].get<int>();
+            area.width = item.value()["w"].get<int>();
+            area.height = item.value()["h"].get<int>();
             areas[item.key()] = area;
         }
     }
@@ -81,7 +81,7 @@ int32_t TextureIO::create_texture(const std::string& image,
     }
     stbi_image_free(image_data);
 
-    CropArea area = {0,0,(uint32_t)pic_width,(uint32_t)pic_height};
+    FrameArea area = {0,0,(uint32_t)pic_width,(uint32_t)pic_height};
     areas[image_path] = area;
 
     return ret;
