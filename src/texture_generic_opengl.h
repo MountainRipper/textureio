@@ -16,10 +16,11 @@ public:
     static int32_t upload(const SoftwareFrame& frame, GraphicTexture& texture,SamplerMode sampler_mode = kSamplerAuto);
     static uint64_t create_texture(const SoftwareFrame &frame, GraphicTexture &texture, SamplerMode sampler_mode = kSamplerAuto);
     static int32_t release_texture(uint64_t texture_id);
-    static std::string reference_shader_software(SoftwareFrameFormat format, YuvColorSpace color_space);
+    static std::shared_ptr<ReferenceShader> create_reference_shader(SoftwareFrameFormat format, YuvColorSpace color_space);
+    static std::string reference_fragment(SoftwareFrameFormat format, YuvColorSpace color_space);
 private:
     static void get_capability();
-private:
+public:
     static bool  gles_;
     static float version_;
     static bool  bgra_support_;

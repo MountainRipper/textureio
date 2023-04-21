@@ -8,6 +8,11 @@
 
 using namespace mr::tio;
 
+ReferenceShader::~ReferenceShader()
+{
+
+}
+
 TextureIO::TextureIO()
 {
 }
@@ -25,14 +30,13 @@ const SoftwareFormatPlaner *TextureIO::planers_of_software_frame(SoftwareFrameFo
     return &g_software_format_planers[format];
 }
 
-const std::string TextureIO::reference_shader_software(GraphicApi api, SoftwareFrameFormat format, YuvColorSpace color_space, float version)
+const std::shared_ptr<ReferenceShader> TextureIO::create_reference_shader(GraphicApi api, SoftwareFrameFormat format, YuvColorSpace color_space, float version)
 {
-    std::string ret;
     if(api == kGraphicApiOpenGL){
-        ret = TextureGenericOpenGL::reference_shader_software(format,color_space);
+        return  TextureGenericOpenGL::create_reference_shader(format,color_space);
     }
 
-    return ret;
+    return std::shared_ptr<ReferenceShader>();
 }
 
 int32_t TextureIO::create_texture(const std::string& image,

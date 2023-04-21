@@ -2,6 +2,9 @@
 #include <sstream>
 #include <stdio.h>
 #include <vector>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <tio/tio_hardware_graphic.h>
 #include "texture_generic_opengl.h"
 using namespace mr::tio;
@@ -36,6 +39,49 @@ using namespace mr::tio;
 #ifndef GL_LUMINANCE_ALPHA
 #define GL_LUMINANCE_ALPHA 0x190A
 #endif
+
+/*
+2---------3
+|\        |
+|  \      |
+|    \    |
+|      \  |
+|        \|
+0---------1
+*/
+const GLfloat g_vertices[] = {
+    -1, -1, 0,
+     1, -1, 0,
+    -1,  1, 0,
+     1,  1, 0 };
+
+/*
+in opengl left-bottom is (0,0),but in image buffer, left-top is (0,0), so need v-flip
+0---------1
+|        /|
+|      /  |
+|    /    |
+|  /      |
+|/        |
+2-------- 3
+*/
+const GLfloat g_texture_coordinates[] = {
+    0, 1,
+    1, 1,
+    0, 0,
+    1, 0 };
+
+const char* VERTEX_SHADER = R"(
+  precision mediump float;
+  attribute vec3 position;
+  attribute vec2 textureCoord;
+  uniform mat4 project;
+  uniform mat4 transition;
+  out vec2 v_texCoord;
+  void main() {
+    gl_Position = transition * vec4(position,1.0);
+    v_texCoord = textureCoord;
+})";
 
 const char* SHADER_HEADER_DEFINE_PRECISION_AND_TEXCOORD = R"(
 #ifdef GL_ES
@@ -412,6 +458,198 @@ TextureGenericOpenGL::TextureGenericOpenGL()
         gl_error = err;\
     }\
 }
+
+class ReferenceShaderOpenGL : public ReferenceShader{
+
+
+    // ReferenceShader interface
+public:
+    ReferenceShaderOpenGL(){
+
+    }
+    virtual ~ReferenceShaderOpenGL(){
+
+        if(program_ > 0)
+            glDeleteProgram(program_);
+        if(vao_ > 0)
+            glDeleteVertexArrays(1,&vao_);
+        if(vbo_vertex_ > 0)
+            glDeleteBuffers(1,&vbo_vertex_);
+        if(vbo_texcoords_ > 0)
+            glDeleteBuffers(1,&vbo_texcoords_);
+    }
+    virtual std::string shader(ShaderType type) override
+    {
+        if(type == mr::tio::kShaderTypeVertex){
+            return vertex_shader_;
+        }
+        else if(type == mr::tio::kShaderTypeFragment){
+            return fragment_shader_;
+        }
+        return "";
+    }
+    virtual uint64_t program() override
+    {
+        return program_;
+    }
+    virtual int32_t use() override {
+        if(program_ > 0){
+            glUseProgram(program_);
+            return 0;
+        }
+        return kErrorInvalidProgram;
+    }
+    virtual int32_t render(const GraphicTexture &textures, const RenderParam &param) override
+    {
+        glBindVertexArray(vao_);
+
+        float xScaleImg = 1.0f;
+        float yScaleImg = xScaleImg / (textures.width * 1.0 / textures.height);
+
+        float xScaleView = 1.0f;
+        float yScaleView = param.view_width * 1.0 / param.view_height;
+        glm::mat4 trasition(1.0f);
+        trasition = glm::translate(trasition, glm::vec3(param.offset_x, param.offset_y, 0));
+        trasition = glm::scale(trasition, glm::vec3(xScaleView, yScaleView, 1.0f));
+        trasition = glm::rotate(trasition, glm::radians(param.rotate), glm::vec3(0, 0, 1));
+        trasition = glm::scale(trasition, glm::vec3(xScaleImg, yScaleImg, 1.0f));
+        trasition = glm::scale(trasition,glm::vec3(param.scale_x, param.scale_y, 1.0));
+
+        glUniformMatrix4fv(uniform_transition_,1,GL_FALSE,glm::value_ptr(trasition));
+
+        for(int index = 0; index < 4; index++){
+            if(uniform_textures_[index] >= 0 && textures.flags[index] > 0)
+                glUniform1i(uniform_textures_[index], textures.flags[index]);
+        }
+
+        if(uniform_video_size_ >= 0){
+            glUniform2f(uniform_video_size_,textures.width,textures.height);
+        }
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        return 0;
+    }
+
+    int32_t create(SoftwareFrameFormat format, YuvColorSpace color_space){
+        format_ = format;
+
+        fragment_shader_ = TextureGenericOpenGL::reference_fragment(format,color_space);
+        if(TextureGenericOpenGL::gles_){
+            vertex_shader_   = std::string("#version 300 es") + VERTEX_SHADER;
+            fragment_shader_ = std::string("#version 300 es") + fragment_shader_;
+        }
+        else{
+            vertex_shader_   = std::string("#version 330") + VERTEX_SHADER;
+            fragment_shader_ = std::string("#version 330") + fragment_shader_;
+        }
+
+        program_ = create_program(vertex_shader_.c_str(),fragment_shader_.c_str());
+        if(program_ == 0)
+            return kErrorInvalidProgram;
+
+        auto attrib_position = glGetAttribLocation(program_, "position");
+        auto attrib_texture_coords = glGetAttribLocation(program_, "textureCoord");
+        uniform_transition_ = glGetUniformLocation(program_,"transition");
+        uniform_video_size_ = glGetUniformLocation(program_, "videoSize");
+
+        const char* texture_uniform_name[] = {"tex1","tex2","tex3","tex4"};
+
+        const SoftwareFormatPlaner& planers = *TextureIO::planers_of_software_frame(format_);
+        for(int index = 0; index < planers.count; index++){
+            uniform_textures_[index] = glGetUniformLocation(program_, texture_uniform_name[index]);
+        }
+
+        glGenVertexArrays(1, &vao_);
+        glGenBuffers(1, &vbo_vertex_);
+        glGenBuffers(1, &vbo_texcoords_);
+
+        glBindVertexArray(vao_);
+
+        glEnableVertexAttribArray(attrib_position);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_vertex_);
+        glBufferData(GL_ARRAY_BUFFER,sizeof(g_vertices),g_vertices,GL_STATIC_DRAW);
+        glVertexAttribPointer(attrib_position, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), (GLvoid*)0);
+
+        glEnableVertexAttribArray(attrib_texture_coords);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords_);
+        glBufferData(GL_ARRAY_BUFFER,sizeof(g_texture_coordinates),g_texture_coordinates,GL_STATIC_DRAW);
+        glVertexAttribPointer(attrib_texture_coords, 2, GL_FLOAT, GL_FALSE, 2*sizeof(GLfloat), (GLvoid*)0);
+
+        glBindVertexArray(0);
+        return 0;
+    }
+private:
+    GLuint create_program(const char* vss, const char* fss){
+
+        auto vert = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vert, 1, &vss, nullptr);
+        glCompileShader(vert);
+        print_shader_compile_info(vert);
+
+        auto frag = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(frag, 1, &fss, nullptr);
+        glCompileShader(frag);
+        print_shader_compile_info(frag);
+
+        auto prog = glCreateProgram();
+        glAttachShader(prog, vert);
+        glAttachShader(prog, frag);
+        glLinkProgram(prog);
+
+        glDeleteShader(vert);
+        glDeleteShader(frag);
+        return prog;
+    }
+    uint32_t print_shader_compile_info(uint32_t shader) {
+
+      GLint status = 0;
+      GLint count = 0;
+      GLchar* error = NULL;
+
+      glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+      if(status) {
+        return 0;
+      }
+
+      glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &count);
+      if (0 == count) {
+        return 0;
+      }
+
+      error = (GLchar*) malloc(count);
+      glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &count);
+      if(count <= 0) {
+        free(error);
+        error = NULL;
+        return 0;
+      }
+
+      glGetShaderInfoLog(shader, count, NULL, error);
+
+      fprintf(stderr,"SHADER COMPILE ERROR\n");
+      fprintf(stderr,"--------------------------------------------------------\n");
+      fprintf(stderr,"%s\n", error);
+      fprintf(stderr,"--------------------------------------------------------\n");
+
+      free(error);
+      error = NULL;
+
+      return -1;
+    }
+private:
+    SoftwareFrameFormat format_ = kSoftwareFormatNone;
+    std::string fragment_shader_;
+    std::string vertex_shader_;
+    GLuint program_ = 0;
+    GLuint vao_ = 0;
+    GLuint vbo_vertex_ = 0;
+    GLuint vbo_texcoords_ = 0;
+    GLint uniform_transition_ = -1;
+    GLint uniform_video_size_ = -1;
+    GLint uniform_textures_[4] = {-1,-1,-1,-1};
+};
+
 int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture &texture, SamplerMode sampler_mode)
 {
     get_capability();
@@ -421,7 +659,7 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
     const GLuint channel_foramt_es[5] = {0,GL_LUMINANCE,GL_LUMINANCE_ALPHA,GL_RGB,GL_RGBA};
     const GLuint* channel_format = gles_ ? channel_foramt_es : channel_foramt_core;
 
-    const char* texture_uniform_name[] = {"tex1","tex2","tex3","tex4"};
+
     for(int index = 0; index < planers.count; index++){
         if(index >= planers.count)
             break;
@@ -472,19 +710,9 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
                    format,
                    GL_UNSIGNED_BYTE,
                    frame.data[index]);
-        VGFX_GL_CHECK("TextureGenericOpenGL::upload glTexImage2D")
+        VGFX_GL_CHECK("TextureGenericOpenGL::upload glTexImage2D")        
+    }
 
-        if(texture.program){
-            auto location = glGetUniformLocation(texture.program, texture_uniform_name[index]);
-            glUniform1i(location, texture.flags[index]);
-        }
-    }
-    if(texture.program){
-        GLint video_size_location = glGetUniformLocation(texture.program, "videoSize");
-        if(video_size_location >= 0){
-            glUniform2f(video_size_location,frame.width,frame.height);
-        }
-    }
     texture.width = frame.width;
     texture.height = frame.height;
     return 0;
@@ -518,7 +746,14 @@ int32_t TextureGenericOpenGL::release_texture(uint64_t texture_id)
     return kErrorInvalidTextureId;
 }
 
-std::string TextureGenericOpenGL::reference_shader_software(SoftwareFrameFormat format,YuvColorSpace color_space)
+std::shared_ptr<ReferenceShader> TextureGenericOpenGL::create_reference_shader(SoftwareFrameFormat format,YuvColorSpace color_space)
+{
+    auto shader = new ReferenceShaderOpenGL();
+    if(shader->create(format,color_space) < 0)
+        return std::shared_ptr<ReferenceShader>();
+    return std::shared_ptr<ReferenceShader>(shader);
+}
+std::string TextureGenericOpenGL::reference_fragment(SoftwareFrameFormat format, YuvColorSpace color_space)
 {
     get_capability();
     const SoftwareFormatPlaner& planers = *TextureIO::planers_of_software_frame(format);
@@ -620,6 +855,7 @@ std::string TextureGenericOpenGL::reference_shader_software(SoftwareFrameFormat 
 
     return shader_string;
 }
+
 
 void TextureGenericOpenGL::get_capability()
 {

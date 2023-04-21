@@ -10,7 +10,7 @@
 #define kErrorInvalidTextureId -2
 #define kErrorFormatNotMatch   -3
 #define kErrorAllocTexture     -4
-
+#define kErrorInvalidProgram   -5
 namespace mr {
 namespace tio {
 
@@ -82,6 +82,12 @@ enum GraphicApi : int32_t{
     kGraphicApiVulkan,
 };
 
+enum ShaderType{
+    kShaderTypeNone = 0,
+    kShaderTypeVertex,
+    kShaderTypeFragment,
+};
+
 enum YuvColorSpace : int32_t{
     kColorSpaceNone = 0,
     kColorSpaceBt601,
@@ -123,8 +129,6 @@ struct HardwareFrame{
 
 struct GraphicTexture{
     GraphicApi api = kGraphicApiNone;
-    //if provide,auto bind uploaded texture to program
-    uint64_t program = 0;
     //OpenGL: texture id
     uint64_t context[4] = {0,0,0,0};
     //OpenGL: texture unit x, use as 'GL_TEXTURE0 + x'
@@ -272,6 +276,22 @@ public:
     std::shared_ptr<uint8_t> frame_memory_;
 };
 
+struct ReferenceShader{
+    struct RenderParam{
+        int32_t view_width = 0;
+        int32_t view_height = 0;
+        float rotate = 0;
+        float scale_x = 1;
+        float scale_y = 1;
+        float offset_x = 0;
+        float offset_y = 0;
+    };
+    virtual ~ReferenceShader();
+    virtual std::string shader(ShaderType type) = 0;
+    virtual uint64_t program() = 0;
+    virtual int32_t use() = 0;
+    virtual int32_t render(const GraphicTexture& textures,const RenderParam& param) = 0;
+};
 
 template<typename T>
 inline T _tio_max_align(T size,uint8_t div_max = 8){

@@ -20,7 +20,7 @@ public:
 
     static const SoftwareFormatPlaner* planers_of_software_frame(SoftwareFrameFormat format);
 
-    static const std::string reference_shader_software(GraphicApi api,SoftwareFrameFormat format,YuvColorSpace color_space = kColorSpaceBt601,float version = 0);
+    static const std::shared_ptr<ReferenceShader> create_reference_shader(GraphicApi api,SoftwareFrameFormat format,YuvColorSpace color_space = kColorSpaceBt601,float version = 0);
     static const char* reference_shader_hardware(GraphicApi api,HardwareFrameFormat format,float version);
 
     static int32_t create_texture(const std::string& image,

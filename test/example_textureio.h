@@ -29,8 +29,8 @@ private:
 private:
     uint32_t textures_[4] = {0};
     uint32_t texture_unit_base_ = 2;
-    uint32_t programs_[kSoftwareFormatCount] = {0};
-    uint32_t g_vao = 0;
+    std::shared_ptr<ReferenceShader> programs_[kSoftwareFormatCount] = {0};
+
     int width_ = 0;
     int height_ = 0;
 
@@ -51,6 +51,7 @@ private:
     bool crop_mode_ = false;
 
     bool resized_ = false;
+    FrameArea final_size_;
 };
 
 

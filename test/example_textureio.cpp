@@ -3,6 +3,7 @@
 #include <glad/gl.h>
 #include <cstring>
 #include <stb/stb_image.h>
+
 #include "test_pic.h"
 #include "test_png.h"
 #include "glad/gl.h"
@@ -11,16 +12,6 @@
 
 MR_MR_SDL_RUNNER_SHOWCASE(TextureioExample)
 
-static const std::string g_vs_video = R"(
-  precision mediump float;
-  out vec2 v_texCoord;
-  void main() {
-    float x = -1.0 + float((gl_VertexID & 1) << 2);
-    float y = -1.0 + float((gl_VertexID & 2) << 1);
-    v_texCoord.x = (x+1.0)*0.5;
-    v_texCoord.y = (y+1.0)*0.5;
-    gl_Position = vec4(x, -y, 0, 1);
-})";
 
 TextureioExample::TextureioExample()
 {
@@ -71,7 +62,7 @@ int32_t TextureioExample::on_init(void *window,int width, int height)
 
     create_programs();
 
-    glGenVertexArrays(1, &g_vao);
+    glBindVertexArray(0);
     return 0;
 }
 
@@ -105,19 +96,29 @@ int32_t TextureioExample::on_frame()
     auto fill_texture_param = [this](SoftwareFrameFormat format,GraphicTexture& param){
 
     };
+    static float rotate = 0;
+    rotate += 1;
+    if(rotate > 360)
+        rotate = 0;
+
     if(show_source_){
-        texture.program = programs_[source_format_];
-        glUseProgram(texture.program);
-        glFinish();
 
+        float upload_ms = 0;
+        auto shader = programs_[source_format_];
         MR_TIMER_NEW(timer);
-        TextureIO::software_frame_to_graphic(source_image_,texture,(SamplerMode)sampler_mode_);
-        glFinish();
-        float upload_ms = MR_TIMER_MS_RESET(timer);
+        if(shader != nullptr){
+            shader->use();
 
-        glBindVertexArray(g_vao);
-        glViewport(0,0,width_,height_);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+            TextureIO::software_frame_to_graphic(source_image_,texture,(SamplerMode)sampler_mode_);
+            float upload_ms = MR_TIMER_MS_RESET(timer);
+
+            glViewport(0,0,width_,height_);
+
+            mr::tio::ReferenceShader::RenderParam param{int32_t(width_),int32_t(height_),rotate,1,1,0,0};
+            shader->render(texture,param);
+        }
+
+
         glFinish();
         float render_ms = MR_TIMER_MS(timer);
 
@@ -141,20 +142,20 @@ int32_t TextureioExample::on_frame()
 
                 SoftwareFrameFormat format = static_cast<SoftwareFrameFormat>(index);
                 std::shared_ptr<SoftwareFrameWithMemory> frame = target_frames_[index];
-                texture.program = programs_[index];
 
-                glUseProgram(texture.program);
-                glFinish();
+                auto shader = programs_[index];
+                if(!shader)
+                    continue;
+
+                shader->use();
 
                 MR_TIMER_NEW(timer);
                 {
                     TextureIO::software_frame_to_graphic(*frame,texture,(SamplerMode)sampler_mode_);
-                    glFinish();
                 }
                 float upload_ms = MR_TIMER_MS_RESET(timer);
 
                 {
-                    glBindVertexArray(g_vao);
                     FrameArea area;
                     area.aspect_crop(item_width-2,item_height-2,frame->width*1.0/frame->height);
 
@@ -163,8 +164,9 @@ int32_t TextureioExample::on_frame()
                                area.width,
                                area.height);
 
-                    glDrawArrays(GL_TRIANGLES, 0, 3);
-                    glFinish();
+
+                    mr::tio::ReferenceShader::RenderParam param{int32_t(area.width),int32_t(area.height),rotate,1,1,0,0};
+                    shader->render(texture,param);
                 }
                 float render_ms = MR_TIMER_MS(timer);
 
@@ -224,8 +226,8 @@ int32_t TextureioExample::on_frame()
 
         ImGui::Text("Render Sampler:"); ImGui::SameLine();
         ImGui::RadioButton("Auto", &sampler_mode_, 0); ImGui::SameLine();
-        ImGui::RadioButton("Linear", &sampler_mode_, 1); ImGui::SameLine();
-        ImGui::RadioButton("Nearest", &sampler_mode_, 2);
+        ImGui::RadioButton("Nearest", &sampler_mode_, 1); ImGui::SameLine();
+        ImGui::RadioButton("Linear", &sampler_mode_, 2);
 
         int colorsapce_old_ = colorspace_;
         ImGui::Text("Render ColorSpace:"); ImGui::SameLine();
@@ -236,6 +238,7 @@ int32_t TextureioExample::on_frame()
         ImGui::RadioButton("2020", &colorspace_, 5); ImGui::SameLine();
         ImGui::RadioButton("2020F", &colorspace_, 6);
 
+        ImGui::Text("Frame Size:%dx%d",final_size_.width,final_size_.height);
         ImGui::End();
 
         if(origin_image_old != origin_image_use_ || rotate_old_ != rotate_)
@@ -302,17 +305,16 @@ void TextureioExample::convert_to_target_frames()
         crop_aspect_ratio_ = convert_width * 1.0 / convert_height;
     }
 
-    FrameArea final_size;
-    final_size.aspect_crop(convert_width,convert_height,crop_aspect_ratio_);
-    final_size.width = (final_size.width+1) / 2 * 2;
-    final_size.height = (final_size.height+1) / 2 * 2;
+    final_size_.aspect_crop(convert_width,convert_height,crop_aspect_ratio_);
+    final_size_.width = (final_size_.width+1) / 2 * 2;
+    final_size_.height = (final_size_.height+1) / 2 * 2;
 
-    fprintf(stderr,"Final size %dx%d\n",final_size.width,final_size.height);
+    fprintf(stderr,"Final size %dx%d\n",final_size_.width,final_size_.height);
 
     MR_TIMER_NEW(aa);
     for(int index = 0; index < kSoftwareFormatCount; index++){
         SoftwareFrameFormat format = static_cast<SoftwareFrameFormat>(index);
-        std::shared_ptr<SoftwareFrameWithMemory> dest = std::shared_ptr<SoftwareFrameWithMemory>(new SoftwareFrameWithMemory(format,final_size.width,final_size.height));
+        std::shared_ptr<SoftwareFrameWithMemory> dest = std::shared_ptr<SoftwareFrameWithMemory>(new SoftwareFrameWithMemory(format,final_size_.width,final_size_.height));
         dest->alloc();
         target_frames_[index] = dest;
 
@@ -329,27 +331,13 @@ void TextureioExample::convert_to_target_frames()
 void TextureioExample::create_programs()
 {
     glUseProgram(0);
-    std::string vertex_shader = g_vs_video;
-    auto version = (const char*)glGetString(GL_VERSION);
-    if(version && strstr(version,"OpenGL ES"))
-        vertex_shader = std::string("#version 300 es") + vertex_shader;
-    else
-        vertex_shader = std::string("#version 330") + vertex_shader;
-
-
-    MR_GL_CHECK(mr::Logger::kLogLevelError,"glGetString");
 
     for(int index = 0; index < kSoftwareFormatCount; index++){
 
         if(programs_[index] != 0){
-            glDeleteProgram(programs_[index]);
+            programs_[index] = nullptr;
         }
-        auto fragment_shader = TextureIO::reference_shader_software(kGraphicApiOpenGL,static_cast<SoftwareFrameFormat>(index),(YuvColorSpace)colorspace_);
-        if(version && strstr(version,"OpenGL ES"))
-            fragment_shader = std::string("#version 300 es") + fragment_shader;
-        else
-            fragment_shader = std::string("#version 330") + fragment_shader;
-        //MR_INFO("{}",fragment_shader.c_str());
-        programs_[index] = create_program(vertex_shader.c_str(),fragment_shader.c_str());
+
+        programs_[index] = TextureIO::create_reference_shader(mr::tio::kGraphicApiOpenGL,(SoftwareFrameFormat)index,(YuvColorSpace)colorspace_);
     }
 }
