@@ -27,7 +27,7 @@ int32_t TextureIO::software_frame_to_graphic(const SoftwareFrame &frame, Graphic
 
 const SoftwareFormatPlaner *TextureIO::planers_of_software_frame(SoftwareFrameFormat format)
 {    
-    return &g_software_format_planers[format];
+    return &g_software_format_info[format];
 }
 
 const std::shared_ptr<ReferenceShader> TextureIO::create_reference_shader(GraphicApi api, SoftwareFrameFormat format, YuvColorSpace color_space, float version)

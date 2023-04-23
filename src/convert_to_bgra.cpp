@@ -152,7 +152,7 @@ void ConvertToBGRA::register_converter()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
             SoftwareFrameWithMemory gray = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height);
-            SoftwareFrameWithMemory alpha = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height,1);
+            SoftwareFrameWithMemory alpha = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height,'a');
 
             libyuv::SplitUVPlane(source.data[0], source.line_size[0],
                 gray.data[0], gray.line_size[0],

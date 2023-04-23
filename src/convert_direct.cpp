@@ -24,7 +24,7 @@ void ConvertDirect::register_copy_converter()
 
         uint8_t depth = 8;
 
-        auto& planes = g_software_format_planers[source.format].planes;
+        auto& planes = g_software_format_info[source.format].planes;
         for(int index = 0; index < 4; index++){
             auto& plane = planes[index];
             if(plane.channels == 0)
@@ -53,7 +53,7 @@ void ConvertDirect::swap_nvxx_uv_order()
     Converter swap_nvxx_uv = [](const SoftwareFrame& source,
                                       SoftwareFrame& dest) -> int32_t {
 
-        auto& plane = g_software_format_planers[source.format].planes[1];
+        auto& plane = g_software_format_info[source.format].planes[1];
 
         libyuv::CopyPlane(source.data[0],source.line_size[0],
                 dest.data[0],dest.line_size[0],

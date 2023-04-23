@@ -556,7 +556,7 @@ public:
         const char* texture_uniform_name[] = {"tex1","tex2","tex3","tex4"};
 
         const SoftwareFormatPlaner& planers = *TextureIO::planers_of_software_frame(format_);
-        for(int index = 0; index < planers.count; index++){
+        for(int index = 0; index < planers.planes_count; index++){
             uniform_textures_[index] = glGetUniformLocation(program_, texture_uniform_name[index]);
         }
 
@@ -660,8 +660,8 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
     const GLuint* channel_format = gles_ ? channel_foramt_es : channel_foramt_core;
 
 
-    for(int index = 0; index < planers.count; index++){
-        if(index >= planers.count)
+    for(int index = 0; index < planers.planes_count; index++){
+        if(index >= planers.planes_count)
             break;
         if(texture.context[index] == 0)
             return kErrorInvalidTextureId;
@@ -720,7 +720,7 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
 
 uint64_t TextureGenericOpenGL::create_texture(const SoftwareFrame &frame,GraphicTexture& texture,SamplerMode sampler_mode)
 {
-    int planes = g_software_format_planers[frame.format].count;
+    int planes = g_software_format_info[frame.format].planes_count;
     GLuint texture_ids[4] = {0};
     glGenTextures(planes,texture_ids);
 
@@ -760,7 +760,7 @@ std::string TextureGenericOpenGL::reference_fragment(SoftwareFrameFormat format,
 
     std::string shader_string = SHADER_HEADER_DEFINE_PRECISION_AND_TEXCOORD;
 
-    shader_string += sharder_textures_define_of_count[planers.count];
+    shader_string += sharder_textures_define_of_count[planers.planes_count];
 
     if(format >= kSoftwareFormatYUVStart && format <= kSoftwareFormatYUVEnd){
         shader_string += sharder_colorspace_define_of_type[color_space];

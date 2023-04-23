@@ -3,7 +3,7 @@
 #include <glad/gl.h>
 #include <cstring>
 #include <stb/stb_image.h>
-
+#include <stb/stb_image_write.h>
 #include "test_pic.h"
 #include "test_png.h"
 #include "glad/gl.h"
@@ -52,6 +52,9 @@ int32_t TextureioExample::on_init(void *window,int width, int height)
     origin_image_[1] = copy_temp.clone_new();
     stbi_image_free(image);
 
+    for(int index = 0; index < kSoftwareFormatCount; index++){
+        format_names[index] = g_software_format_info[index].name;
+    }
     convert_to_target_frames();
 
     textures_[0] = create_texture(128,128,0);
@@ -105,29 +108,30 @@ int32_t TextureioExample::on_frame()
 
         float upload_ms = 0;
         auto shader = programs_[source_format_];
+        glFinish();
         MR_TIMER_NEW(timer);
         if(shader != nullptr){
             shader->use();
 
             TextureIO::software_frame_to_graphic(source_image_,texture,(SamplerMode)sampler_mode_);
-            float upload_ms = MR_TIMER_MS_RESET(timer);
+            glFinish();
+            upload_ms = MR_TIMER_MS_RESET(timer);
 
             glViewport(0,0,width_,height_);
 
-            mr::tio::ReferenceShader::RenderParam param{int32_t(width_),int32_t(height_),rotate,1,1,0,0};
+            mr::tio::ReferenceShader::RenderParam param{int32_t(width_),int32_t(height_),render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
             shader->render(texture,param);
+            glFinish();
         }
 
-
-        glFinish();
         float render_ms = MR_TIMER_MS(timer);
 
         ImGui::SetNextWindowPos(ImVec2(10,10));
         ImGui::SetNextWindowBgAlpha(0.15f);
         std::string win_name = "hint-";
-        win_name += g_soft_format_names[index];
+        win_name += g_software_format_info[index].name;
         ImGui::Begin(win_name.c_str(),NULL,window_flags);
-        ImGui::Text("%s C:%.2fms U:%.2fms R:%.2fms", g_soft_format_names[source_format_],convert_ms_[index],upload_ms,render_ms);
+        ImGui::Text("%s C:%.2fms U:%.2fms R:%.2fms", g_software_format_info[source_format_].name,convert_ms_[index],upload_ms,render_ms);
         ImGui::End();
     }
     else{
@@ -149,9 +153,11 @@ int32_t TextureioExample::on_frame()
 
                 shader->use();
 
+                glFinish();
                 MR_TIMER_NEW(timer);
                 {
                     TextureIO::software_frame_to_graphic(*frame,texture,(SamplerMode)sampler_mode_);
+                    glFinish();
                 }
                 float upload_ms = MR_TIMER_MS_RESET(timer);
 
@@ -165,17 +171,18 @@ int32_t TextureioExample::on_frame()
                                area.height);
 
 
-                    mr::tio::ReferenceShader::RenderParam param{int32_t(area.width),int32_t(area.height),rotate,1,1,0,0};
+                    mr::tio::ReferenceShader::RenderParam param{int32_t(area.width),int32_t(area.height),render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
                     shader->render(texture,param);
+                    glFinish();
                 }
                 float render_ms = MR_TIMER_MS(timer);
 
                 ImGui::SetNextWindowPos(ImVec2(x,y));
                 ImGui::SetNextWindowBgAlpha(0.15f);
                 std::string win_name = "hint-";
-                win_name += g_soft_format_names[index];
+                win_name += g_software_format_info[index].name;
                 ImGui::Begin(win_name.c_str(),NULL,window_flags);
-                ImGui::Text("%s C:%.2fms U:%.2fms R:%.2fms", g_soft_format_names[index],convert_ms_[index]/frames_convert_count_,upload_ms,render_ms);
+                ImGui::Text("%s C:%.2fms U:%.2fms R:%.2fms", g_software_format_info[index].name,convert_ms_[index]/frames_convert_count_,upload_ms,render_ms);
                 ImGui::End();
 
                 index++;
@@ -200,7 +207,7 @@ int32_t TextureioExample::on_frame()
         int format_old = source_format_;
         int origin_image_old = origin_image_use_;
         ImGui::SetNextItemWidth(150);
-        ImGui::Combo("InputFormat", &source_format_, g_soft_format_names, IM_ARRAYSIZE(g_soft_format_names));ImGui::SameLine();
+        ImGui::Combo("InputFormat", &source_format_, format_names, IM_ARRAYSIZE(format_names));ImGui::SameLine();
         ImGui::Checkbox("  ShowSourceOnly",&show_source_);
 
         ImGui::Text("Image:"); ImGui::SameLine();
@@ -208,21 +215,26 @@ int32_t TextureioExample::on_frame()
         ImGui::RadioButton("Tiger", &origin_image_use_, 1);
 
         int rotate_old_ = rotate_;
-        ImGui::Text("Software Rotate:"); ImGui::SameLine();
+        ImGui::Text("Convert Rotate:"); ImGui::SameLine();
         ImGui::RadioButton("0", &rotate_, 0); ImGui::SameLine();
         ImGui::RadioButton("90", &rotate_, 90); ImGui::SameLine();
         ImGui::RadioButton("180", &rotate_, 180); ImGui::SameLine();
         ImGui::RadioButton("270", &rotate_, 270);
 
         float old_ratio = crop_aspect_ratio_;
-        bool crop_mode_old_ = crop_mode_;
-        ImGui::Text("Software Aspect Ratio:"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
-        ImGui::DragFloat("##ratio",&crop_aspect_ratio_, (crop_aspect_ratio_<=1?0.05:0.2), 0.2, 5.0,"%.2f"); ImGui::SameLine();
-        ImGui::Checkbox("Crop",&crop_mode_); ImGui::SameLine();
+        int fill_mode_old_ = fill_mode_;
+        ImGui::Text("Convert Aspect Ratio:"); ImGui::SameLine();ImGui::SetNextItemWidth(180);
+        char format[64];
+        sprintf(format,"%s %dx%d","%.2f",final_size_.width,final_size_.height);
+        ImGui::DragFloat("##ratio",&crop_aspect_ratio_, (crop_aspect_ratio_<=1?0.05:0.2), 0.2, 5.0,format); ImGui::SameLine();
         if(ImGui::Button("Reset")){
             crop_aspect_ratio_ = 0;
-            crop_mode_ = false;
         }
+        ImGui::SameLine();
+        ImGui::Text("Fill Mode:"); ImGui::SameLine();
+        ImGui::RadioButton("Fill", &fill_mode_, 0); ImGui::SameLine();
+        ImGui::RadioButton("Fit", &fill_mode_, 1); ImGui::SameLine();
+        ImGui::RadioButton("Crop", &fill_mode_, 2);
 
         ImGui::Text("Render Sampler:"); ImGui::SameLine();
         ImGui::RadioButton("Auto", &sampler_mode_, 0); ImGui::SameLine();
@@ -238,13 +250,27 @@ int32_t TextureioExample::on_frame()
         ImGui::RadioButton("2020", &colorspace_, 5); ImGui::SameLine();
         ImGui::RadioButton("2020F", &colorspace_, 6);
 
+        ImGui::Text("Render:"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
+        ImGui::DragFloat("scaleX",&render_scale_x_, (render_scale_x_<=1?0.05:0.2), 0.2, 5.0,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
+        ImGui::DragFloat("scaleY",&render_scale_y_, (render_scale_x_<=1?0.05:0.2), 0.2, 5.0,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
+        ImGui::DragFloat("offsetX",&render_offset_x_, 0.025, -1, 1,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
+        ImGui::DragFloat("offsetY",&render_offset_y_, 0.025, -1, 1,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
+        ImGui::DragFloat("rotate",&render_rotate_, 1, 0, 360,"%.2f");ImGui::SameLine();
+        if(ImGui::Button("Reset##renderTransitions")){
+            render_scale_x_ = 1;
+            render_scale_y_ = 1;
+            render_offset_x_ = 0;
+            render_offset_y_ = 0;
+            render_rotate_ = 0;
+        }
+
         ImGui::Text("Frame Size:%dx%d",final_size_.width,final_size_.height);
         ImGui::End();
 
         if(origin_image_old != origin_image_use_ || rotate_old_ != rotate_)
             crop_aspect_ratio_ = 0;
 
-        if(format_old != source_format_ || origin_image_old != origin_image_use_ || rotate_old_ != rotate_ || old_ratio != crop_aspect_ratio_ || crop_mode_old_ != crop_mode_){
+        if(format_old != source_format_ || origin_image_old != origin_image_use_ || rotate_old_ != rotate_ || old_ratio != crop_aspect_ratio_ || fill_mode_old_ != fill_mode_){
             frames_convert_count_ = 0;
             memset(convert_ms_,0,sizeof(float)*kSoftwareFormatCount);
             convert_to_target_frames();
@@ -319,7 +345,7 @@ void TextureioExample::convert_to_target_frames()
         target_frames_[index] = dest;
 
         MR_TIMER_NEW(convert_timer);
-        software_converter_.convert(source_image_,*dest,(RotationMode)rotate_,crop_mode_);
+        software_converter_.convert(source_image_,*dest,(RotationMode)rotate_,(FillMode)fill_mode_);
         convert_ms_[index] += MR_TIMER_MS(convert_timer);
     }
     static float totle = 0;

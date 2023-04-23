@@ -7,10 +7,13 @@
 #include <memory>
 
 #define kErrorInvalidFrame     -1
-#define kErrorInvalidTextureId -2
-#define kErrorFormatNotMatch   -3
-#define kErrorAllocTexture     -4
-#define kErrorInvalidProgram   -5
+#define kErrorFormatNotMatch   -2
+#define kErrorFormatNotSupport -3
+
+#define kErrorAllocTexture     -100
+#define kErrorInvalidTextureId -101
+#define kErrorInvalidProgram   -102
+
 namespace mr {
 namespace tio {
 
@@ -51,6 +54,8 @@ enum SoftwareFrameFormat: int32_t{
     kSoftwareFormatYUVStart = kSoftwareFormatI420,
     kSoftwareFormatYUVEnd = kSoftwareFormatYUV444,
 };
+
+#define IS_INTERMEDIATE_FORMAT(format) (format == kSoftwareFormatI420 || format == kSoftwareFormatI422 || format == kSoftwareFormatI444 || format == kSoftwareFormatBGRA32)
 
 enum HardwareFrameFormat: int32_t{
     kHardwareFrameNone = 0,
@@ -105,12 +110,45 @@ enum RotationMode : int32_t{
   kRotate270 = 270
 };
 
-enum SamplerMode: int32_t{
+enum SamplerMode : int32_t{
     kSamplerAuto,
     kSamplerNearest,
     kSamplerLinear,
     kSamplerBilinear, //just for software scale
     kSamplerBox, //just for software scale
+};
+
+enum FillMode : int32_t{
+    kStretchFill,
+    kAspectFit,
+    kAspectCrop
+};
+
+
+struct FrameArea{
+    uint32_t x = 0;
+    uint32_t y = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+
+    void aspect_crop(float view_width,float view_height,float target_ratio){
+        float view_ratio = view_width / view_height;
+
+        if(view_ratio >= target_ratio){
+            width = round(view_height * target_ratio);
+            height = view_height;
+            x = (view_width - width) / 2; //it will outside of view
+            y = 0;
+        }
+        else{
+            //use view width
+            width  = view_width;
+            height = round(view_width / target_ratio);
+            x = 0;
+            y = (view_height - height) / 2;  //it will outside of view
+        }
+        return ;
+    }
 };
 
 struct SoftwareFrame{
@@ -119,6 +157,7 @@ struct SoftwareFrame{
     uint32_t height = 0;
     uint8_t* data[4] = {0,0,0,0};
     uint32_t line_size[4] = {0,0,0,0};
+    void clear(FrameArea area = FrameArea());
 };
 struct HardwareFrame{
     HardwareFrameFormat format;
@@ -144,114 +183,36 @@ struct Planer{
     uint8_t channels = 0;
 };
 struct SoftwareFormatPlaner{
-    uint8_t count = 0;
+    const char* name = "";
     uint8_t bpp = 0;
+    uint8_t planes_count = 0;
     Planer planes[4];
 };
 
-struct FrameArea{
-    uint32_t x = 0;
-    uint32_t y = 0;
-    uint32_t width = UINT32_MAX;
-    uint32_t height = UINT32_MAX;
 
-    void aspect_fit(float view_width,float view_height,float target_ratio){
-
-        float view_ratio = view_width / view_height;
-
-        if(view_ratio >= target_ratio){
-            width  = round(view_height * target_ratio);
-            height = view_height;
-            x = (view_width - width) / 2;
-            y = 0;
-        }
-        else{
-            width = view_width;
-            height = round(view_width / target_ratio);
-            x = 0;
-            y = (view_height - height) / 2;
-        }
-    }
-
-    void aspect_crop(float view_width,float view_height,float target_ratio){
-        float view_ratio = view_width / view_height;
-
-        if(view_ratio >= target_ratio){
-            width = round(view_height * target_ratio);
-            height = view_height;
-            x = (view_width - width) / 2; //it will outside of view
-            y = 0;
-        }
-        else{
-            //use view width
-            width  = view_width;
-            height = round(view_width / target_ratio);
-            x = 0;
-            y = (view_height - height) / 2;  //it will outside of view
-        }
-        return ;
-    }
-};
-static const char* g_soft_format_names[kSoftwareFormatCount] = {
-   "I420",
-   "YV12",
-   "NV12",
-   "NV21",
-
-   "I422",
-   "NV16",
-   "NV61",
-   "YUYV422",
-   "YVYU422",
-   "UYVY422",
-
-   "I444",
-   "NV24",
-   "NV42",
-   "YUV444",
-
-   "RGB24",
-   "BGR24",
-
-   "RGBA32",
-   "BGRA32",
-   "ARGB32",
-   "ABGR32",
-
-   "GRAY8",
-   "GRAY8A",
-};
-
-
-static const SoftwareFormatPlaner g_software_format_planers[kSoftwareFormatCount] = {
-    [kSoftwareFormatI420   ] = {3,12,{{1,1,1},{0.5,0.5,1},{0.5,0.5,1},{}}},
-    [kSoftwareFormatYV12   ] = {3,12,{{1,1,1},{0.5,0.5,1},{0.5,0.5,1},{}}},
-    [kSoftwareFormatNV12   ] = {2,12,{{1,1,1},{0.5,0.5,2},{},{}}},
-    [kSoftwareFormatNV21   ] = {2,12,{{1,1,1},{0.5,0.5,2},{},{}}},
-
-    [kSoftwareFormatI422   ] = {3,16,{{1,1,1},{0.5,1,1},{0.5,1,1},{}}},
-    [kSoftwareFormatNV16   ] = {2,16,{{1,1,1},{0.5,1,2},{},{}}},
-    [kSoftwareFormatNV61   ] = {2,16,{{1,1,1},{0.5,1,2},{},{}}},
-    [kSoftwareFormatYUYV422] = {1,16,{{0.5,1,4},{},{},{}}}, // 0.5 sampels of width, but 4ch-32bit per sample,rgba=y1-u-y2-v
-    [kSoftwareFormatYVYU422] = {1,16,{{0.5,1,4},{},{},{}}}, // same as above
-    [kSoftwareFormatUYVY422] = {1,16,{{0.5,1,4},{},{},{}}}, // same as above
-
-    [kSoftwareFormatI444   ] = {3,24,{{1,1,1},{1,1,1},{1,1,1},{}}},
-    [kSoftwareFormatNV24   ] = {2,24,{{1,1,1},{1,1,2},{},{}}},
-    [kSoftwareFormatNV42   ] = {2,24,{{1,1,1},{1,1,2},{},{}}},
-    [kSoftwareFormatYUV444 ] = {1,24,{{1,1,3},{},{},{}}},
-
-    [kSoftwareFormatRGB24  ] = {1,24,{{1,1,3},{},{},{}}},
-    [kSoftwareFormatBGR24  ] = {1,24,{{1,1,3},{},{},{}}},
-
-    [kSoftwareFormatRGBA32 ] = {1,32,{{1,1,4},{},{},{}}},
-    [kSoftwareFormatBGRA32 ] = {1,32,{{1,1,4},{},{},{}}},
-    [kSoftwareFormatARGB32 ] = {1,32,{{1,1,4},{},{},{}}},
-    [kSoftwareFormatABGR32 ] = {1,32,{{1,1,4},{},{},{}}},
-
-    [kSoftwareFormatGRAY8  ] = {1,8,{{1,1,1},{},{},{}}},
-
-    [kSoftwareFormatGRAY8A ] = {1,16,{{1,1,2},{},{},{}}}
+static const SoftwareFormatPlaner g_software_format_info[kSoftwareFormatCount] = {
+    [kSoftwareFormatI420   ] = {"I420",   12,3,{{1,1,1},{0.5,0.5,1},{0.5,0.5,1},{}}},
+    [kSoftwareFormatYV12   ] = {"YV12",   12,3,{{1,1,1},{0.5,0.5,1},{0.5,0.5,1},{}}},
+    [kSoftwareFormatNV12   ] = {"NV12",   12,2,{{1,1,1},{0.5,0.5,2},{},{}}},
+    [kSoftwareFormatNV21   ] = {"NV21",   12,2,{{1,1,1},{0.5,0.5,2},{},{}}},
+    [kSoftwareFormatI422   ] = {"I422",   16,3,{{1,1,1},{0.5,1,1},{0.5,1,1},{}}},
+    [kSoftwareFormatNV16   ] = {"NV16",   16,2,{{1,1,1},{0.5,1,2},{},{}}},
+    [kSoftwareFormatNV61   ] = {"NV61",   16,2,{{1,1,1},{0.5,1,2},{},{}}},
+    [kSoftwareFormatYUYV422] = {"YUYV422",16,1,{{0.5,1,4},{},{},{}}}, // 0.5 sampels of width, but 4ch-32bit per sample,rgba=y1-u-y2-v
+    [kSoftwareFormatYVYU422] = {"YVYU422",16,1,{{0.5,1,4},{},{},{}}}, // same as above
+    [kSoftwareFormatUYVY422] = {"UYVY422",16,1,{{0.5,1,4},{},{},{}}}, // same as above
+    [kSoftwareFormatI444   ] = {"I444",   24,3,{{1,1,1},{1,1,1},{1,1,1},{}}},
+    [kSoftwareFormatNV24   ] = {"NV24",   24,2,{{1,1,1},{1,1,2},{},{}}},
+    [kSoftwareFormatNV42   ] = {"NV42",   24,2,{{1,1,1},{1,1,2},{},{}}},
+    [kSoftwareFormatYUV444 ] = {"YUV444", 24,1,{{1,1,3},{},{},{}}},
+    [kSoftwareFormatRGB24  ] = {"RGB24",  24,1,{{1,1,3},{},{},{}}},
+    [kSoftwareFormatBGR24  ] = {"BGR24",  24,1,{{1,1,3},{},{},{}}},
+    [kSoftwareFormatRGBA32 ] = {"RGBA32", 32,1,{{1,1,4},{},{},{}}},
+    [kSoftwareFormatBGRA32 ] = {"BGRA32", 32,1,{{1,1,4},{},{},{}}},
+    [kSoftwareFormatARGB32 ] = {"ARGB32", 32,1,{{1,1,4},{},{},{}}},
+    [kSoftwareFormatABGR32 ] = {"ABGR32", 32,1,{{1,1,4},{},{},{}}},
+    [kSoftwareFormatGRAY8  ] = {"GRAY8",  8, 1,{{1,1,1},{},{},{}}},
+    [kSoftwareFormatGRAY8A ] = {"GRAY8A", 16,1,{{1,1,2},{},{},{}}}
 };
 
 

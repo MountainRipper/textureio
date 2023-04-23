@@ -4,7 +4,51 @@
 #include <tio/tio_software_frame.h>
 #include "convert_manager.h"
 
+void SoftwareFrame::clear(mr::tio::FrameArea area){
+    if(area.width == 0 || area.height == 0)
+        area = FrameArea{0,0,width,height};
 
+    auto& planes = g_software_format_info[format].planes;
+
+    if(format <= kSoftwareFormatYUVEnd){
+        if(format == kSoftwareFormatYUYV422 || format == kSoftwareFormatYVYU422 || format == kSoftwareFormatUYVY422){
+
+        }
+        else if(format == kSoftwareFormatYUV444){
+
+        }
+        else{
+            for(int index = 0; index < 4; index++){
+                auto& plane = planes[index];
+                if(plane.channels == 0)
+                    break;
+                if(index == 0){
+                    //Y plane
+                    libyuv::SetPlane(data[0] + line_size[0] * area.y + area.x,
+                            line_size[0],
+                            area.width,
+                            area.height,
+                            0);
+                }
+                else{
+                    libyuv::SetPlane(data[index] + (line_size[index] * int(area.y * plane.scale_y)) + (int(area.x * plane.scale_x) * plane.channels),
+                            line_size[index],
+                            area.width * plane.scale_x * plane.channels,
+                            area.height * plane.scale_y,
+                            128);
+                }
+            }
+        }
+    }
+    else{
+        libyuv::SetPlane(data[0] + line_size[0] * area.y + area.x * planes[0].channels,
+                line_size[0],
+                area.width * planes[0].channels,
+                area.height,
+                0);
+    }
+
+}
 SoftwareFrameWithMemory::SoftwareFrameWithMemory(const SoftwareFrameWithMemory &other){
     memcpy(this,&other,sizeof(SoftwareFrame));
     for(int index = 0; index < 4 ; index++)
@@ -28,7 +72,7 @@ SoftwareFrameWithMemory::SoftwareFrameWithMemory(SoftwareFrameFormat format, uin
 
 void SoftwareFrameWithMemory::alloc(){
     uint32_t width_adjust = (width + 1) & ~1;
-    uint32_t bpp = g_software_format_planers[format].bpp;
+    uint32_t bpp = g_software_format_info[format].bpp;
     uint32_t bytes = width_adjust*height*bpp/8;
     frame_memory_ = std::shared_ptr<uint8_t>(new uint8_t[bytes],std::default_delete<uint8_t[]>());
     data_buffer_ = frame_memory_.get();
@@ -65,7 +109,7 @@ void SoftwareFrameWithMemory::fill_plane(uint8_t *data_from){
     data[0] = data[1] = data[2] = data[3] = nullptr;
 
     uint8_t* plane_ptr = data_buffer_;
-    auto& planes = g_software_format_planers[format].planes;
+    auto& planes = g_software_format_info[format].planes;
 
     for(int index = 0; index < 4; index++){
         auto& plane = planes[index];
@@ -90,7 +134,7 @@ SoftwareFrameConvert::SoftwareFrameConvert()
     ConvertManager::init();
 }
 
-int32_t SoftwareFrameConvert::convert(const SoftwareFrame &source, SoftwareFrame &dest, RotationMode rotate, bool use_crop)
+int32_t SoftwareFrameConvert::convert(const SoftwareFrame &source, SoftwareFrame &dest, RotationMode rotate, mr::tio::FillMode fill_mode)
 {
     auto source_format = source.format;
     auto dest_format = dest.format;
@@ -99,7 +143,7 @@ int32_t SoftwareFrameConvert::convert(const SoftwareFrame &source, SoftwareFrame
         auto converter = ConvertManager::get_convertor(source_format,dest_format);
 
         if(converter){
-            fprintf(stderr,"Direct Converter from %s to %s.\n",g_soft_format_names[source_format],g_soft_format_names[dest_format]);
+            fprintf(stderr,"Direct Converter from %s to %s.\n",g_software_format_info[source_format].name,g_software_format_info[dest_format].name);
             converter(source,dest);
         }
         else{
@@ -111,16 +155,19 @@ int32_t SoftwareFrameConvert::convert(const SoftwareFrame &source, SoftwareFrame
             assert(converter_to_intermediate);
             assert(converter_from_intermediate);
 
-            fprintf(stderr,"Indirect Converter from %s to %s,then to %s.\n",g_soft_format_names[source_format],g_soft_format_names[intermediate_format],g_soft_format_names[dest_format]);
+            fprintf(stderr,"Indirect Converter from %s to %s,then to %s.\n",
+                    g_software_format_info[source_format].name,
+                    g_software_format_info[intermediate_format].name,
+                    g_software_format_info[dest_format].name);
 
             SoftwareFrameWithMemory intermediate_frame = {intermediate_format,source.width,source.height};
-            intermediate_frame = ConvertManager::thread_temporary_frame(intermediate_format,source.width,source.height,100);
+            intermediate_frame = ConvertManager::thread_temporary_frame(intermediate_format,source.width,source.height,'c'+1);
             converter_to_intermediate(source,intermediate_frame);
             converter_from_intermediate(intermediate_frame,dest);
         }
     }
     else{
-        ConvertManager::crop_rotate_scale(source,dest,rotate,use_crop);
+        ConvertManager::crop_rotate_scale(source,dest,rotate,fill_mode,kSamplerBilinear);
     }
     return 0;
 }

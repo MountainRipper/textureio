@@ -40,15 +40,24 @@ private:
     std::shared_ptr<SoftwareFrameWithMemory> target_frames_[kSoftwareFormatCount];
     float convert_ms_[kSoftwareFormatCount] = {0};
     uint32_t frames_convert_count_ = 0;
+    const char* format_names[kSoftwareFormatCount] = {0};
 
     int source_format_ = kSoftwareFormatBGRA32;
     int sampler_mode_ = kSamplerAuto;
     int colorspace_ = kColorSpaceBt601;
     int rotate_ = kRotate0;
+
     float crop_aspect_ratio_ = 0;
+    int fill_mode_ = 0;
+
+    float render_scale_x_ = 1;
+    float render_scale_y_ = 1;
+    float render_offset_x_ = 0;
+    float render_offset_y_ = 0;
+    float render_rotate_ = 0;
+
     int origin_image_use_ = 0;
     bool show_source_ = false;
-    bool crop_mode_ = false;
 
     bool resized_ = false;
     FrameArea final_size_;
