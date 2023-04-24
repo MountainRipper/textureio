@@ -6,10 +6,10 @@ void ConvertFromBGRA::register_converter()
     ConvertManager::add_converter(kSoftwareFormatBGRA32, kSoftwareFormatI420,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::ARGBToI420(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+        libyuv::ARGBToI420(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
                 source.width, source.height);
 
             return 0;
@@ -18,10 +18,10 @@ void ConvertFromBGRA::register_converter()
     ConvertManager::add_converter(kSoftwareFormatBGRA32, kSoftwareFormatYV12,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::ARGBToI420(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                dest.data[2], dest.line_size[2],
-                dest.data[1], dest.line_size[1],
+        libyuv::ARGBToI420(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                dest.data[2], dest.linesize[2],
+                dest.data[1], dest.linesize[1],
                 source.width, source.height);
 
             return 0;
@@ -30,9 +30,9 @@ void ConvertFromBGRA::register_converter()
     ConvertManager::add_converter(kSoftwareFormatBGRA32, kSoftwareFormatNV12,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::ARGBToNV12(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
+        libyuv::ARGBToNV12(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
                 source.width, source.height);
             return 0;
         });
@@ -40,9 +40,9 @@ void ConvertFromBGRA::register_converter()
     ConvertManager::add_converter(kSoftwareFormatBGRA32, kSoftwareFormatNV21,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::ARGBToNV21(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
+        libyuv::ARGBToNV21(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
                 source.width, source.height);
             return 0;
         });
@@ -50,10 +50,10 @@ void ConvertFromBGRA::register_converter()
     ConvertManager::add_converter(kSoftwareFormatBGRA32, kSoftwareFormatI422,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::ARGBToI422(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+        libyuv::ARGBToI422(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
                 source.width, source.height);
             return 0;
         });
@@ -65,15 +65,15 @@ void ConvertFromBGRA::register_converter()
 
         SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height );
 
-        libyuv::ARGBToI422(source.data[0], source.line_size[0],
-            dest.data[0], dest.line_size[0],
-            i422.data[u_plane_index], i422.line_size[u_plane_index],
-            i422.data[v_plane_index], i422.line_size[v_plane_index],
+        libyuv::ARGBToI422(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                i422.data[u_plane_index], i422.linesize[u_plane_index],
+                i422.data[v_plane_index], i422.linesize[v_plane_index],
             source.width, source.height);
 
-        libyuv::MergeUVPlane(i422.data[1], i422.line_size[1],
-            i422.data[2], i422.line_size[2],
-            dest.data[1], dest.line_size[1],
+        libyuv::MergeUVPlane(i422.data[1], i422.linesize[1],
+                i422.data[2], i422.linesize[2],
+                dest.data[1], dest.linesize[1],
             source.width / 2, source.height);
 
         return 0;
@@ -84,8 +84,8 @@ void ConvertFromBGRA::register_converter()
     ConvertManager::add_converter(kSoftwareFormatBGRA32, kSoftwareFormatYUYV422,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::ARGBToYUY2(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::ARGBToYUY2(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
 
             return 0;
@@ -95,16 +95,16 @@ void ConvertFromBGRA::register_converter()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
             SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
-            libyuv::ARGBToI422(source.data[0], source.line_size[0],
-                    i422.data[0], i422.line_size[0],
-                    i422.data[1], i422.line_size[1],
-                    i422.data[2], i422.line_size[2],
+            libyuv::ARGBToI422(source.data[0], source.linesize[0],
+                    i422.data[0], i422.linesize[0],
+                    i422.data[1], i422.linesize[1],
+                    i422.data[2], i422.linesize[2],
                     source.width, source.height);
 
-            libyuv::I422ToYUY2(i422.data[0], i422.line_size[0],
-                    i422.data[2], i422.line_size[2],
-                    i422.data[1], i422.line_size[1],
-                    dest.data[0], dest.line_size[0],
+            libyuv::I422ToYUY2(i422.data[0], i422.linesize[0],
+                    i422.data[2], i422.linesize[2],
+                    i422.data[1], i422.linesize[1],
+                    dest.data[0], dest.linesize[0],
                     source.width, source.height);
             return 0;
         });
@@ -112,8 +112,8 @@ void ConvertFromBGRA::register_converter()
     ConvertManager::add_converter(kSoftwareFormatBGRA32, kSoftwareFormatUYVY422,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::ARGBToUYVY(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::ARGBToUYVY(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
             return 0;
         });
@@ -121,10 +121,10 @@ void ConvertFromBGRA::register_converter()
     ConvertManager::add_converter(kSoftwareFormatBGRA32, kSoftwareFormatI444,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::ARGBToI444(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+        libyuv::ARGBToI444(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
                 source.width, source.height);
             return 0;
         });
@@ -136,15 +136,15 @@ void ConvertFromBGRA::register_converter()
 
         SoftwareFrameWithMemory i444 = ConvertManager::thread_temporary_frame(kSoftwareFormatI444, source.width, source.height);
 
-        libyuv::ARGBToI444(source.data[0], source.line_size[0],
-            dest.data[0], dest.line_size[0],
-            i444.data[u_plane_index], i444.line_size[u_plane_index],
-            i444.data[v_plane_index], i444.line_size[v_plane_index],
+        libyuv::ARGBToI444(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                i444.data[u_plane_index], i444.linesize[u_plane_index],
+                i444.data[v_plane_index], i444.linesize[v_plane_index],
             source.width, source.height);
 
-        libyuv::MergeUVPlane(i444.data[1], i444.line_size[1],
-            i444.data[2], i444.line_size[2],
-            dest.data[1], dest.line_size[1],
+        libyuv::MergeUVPlane(i444.data[1], i444.linesize[1],
+                i444.data[2], i444.linesize[2],
+                dest.data[1], dest.linesize[1],
             source.width, source.height);
         return 0;
     };
@@ -157,16 +157,16 @@ void ConvertFromBGRA::register_converter()
 
             SoftwareFrameWithMemory i444 = ConvertManager::thread_temporary_frame(kSoftwareFormatI444, source.width, source.height);
 
-            libyuv::ARGBToI444(source.data[0], source.line_size[0],
-                i444.data[0], i444.line_size[0],
-                i444.data[1], i444.line_size[1],
-                i444.data[2], i444.line_size[2],
+            libyuv::ARGBToI444(source.data[0], source.linesize[0],
+                    i444.data[0], i444.linesize[0],
+                    i444.data[1], i444.linesize[1],
+                    i444.data[2], i444.linesize[2],
                 source.width, source.height);
 
-            libyuv::MergeRGBPlane(i444.data[0], i444.line_size[0],
-                i444.data[1], i444.line_size[1],
-                i444.data[2], i444.line_size[2],
-                dest.data[0], dest.line_size[0],
+            libyuv::MergeRGBPlane(i444.data[0], i444.linesize[0],
+                    i444.data[1], i444.linesize[1],
+                    i444.data[2], i444.linesize[2],
+                    dest.data[0], dest.linesize[0],
                 source.width, source.height);
             return 0;
         });
@@ -175,8 +175,8 @@ void ConvertFromBGRA::register_converter()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-            libyuv::ARGBToRAW(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::ARGBToRAW(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
 
             return 0;
@@ -186,8 +186,8 @@ void ConvertFromBGRA::register_converter()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-            libyuv::ARGBToRGB24(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::ARGBToRGB24(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
 
             return 0;
@@ -197,8 +197,8 @@ void ConvertFromBGRA::register_converter()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-        libyuv::ARGBToABGR(source.data[0], source.line_size[0],
-            dest.data[0], dest.line_size[0],
+        libyuv::ARGBToABGR(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
             source.width, source.height);
 
             return 0;
@@ -208,8 +208,8 @@ void ConvertFromBGRA::register_converter()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-        libyuv::ARGBCopy(source.data[0], source.line_size[0],
-            dest.data[0], dest.line_size[0],
+        libyuv::ARGBCopy(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
             source.width, source.height);
 
             return 0;
@@ -219,8 +219,8 @@ void ConvertFromBGRA::register_converter()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-        libyuv::ARGBToBGRA(source.data[0], source.line_size[0],
-            dest.data[0], dest.line_size[0],
+        libyuv::ARGBToBGRA(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
             source.width, source.height);
 
             return 0;
@@ -230,8 +230,8 @@ void ConvertFromBGRA::register_converter()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-            libyuv::ARGBToRGBA(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::ARGBToRGBA(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
 
             return 0;
@@ -241,8 +241,8 @@ void ConvertFromBGRA::register_converter()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-            libyuv::ARGBToI400(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::ARGBToI400(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
 
             return 0;
@@ -255,17 +255,17 @@ void ConvertFromBGRA::register_converter()
             SoftwareFrameWithMemory gray = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height);
             SoftwareFrameWithMemory alpha = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height,1);
 
-            libyuv::ARGBToI400(source.data[0], source.line_size[0],
-                gray.data[0], gray.line_size[0],
+            libyuv::ARGBToI400(source.data[0], source.linesize[0],
+                    gray.data[0], gray.linesize[0],
                 source.width, source.height);
 
-            libyuv::ARGBExtractAlpha(source.data[0], source.line_size[0],
-                    alpha.data[0], alpha.line_size[0],
+            libyuv::ARGBExtractAlpha(source.data[0], source.linesize[0],
+                    alpha.data[0], alpha.linesize[0],
                     source.width, source.height);
 
-            libyuv::MergeUVPlane(gray.data[0], gray.line_size[0],
-                    alpha.data[0], alpha.line_size[0],
-                    dest.data[0], dest.line_size[0],
+            libyuv::MergeUVPlane(gray.data[0], gray.linesize[0],
+                    alpha.data[0], alpha.linesize[0],
+                    dest.data[0], dest.linesize[0],
                     source.width, source.height);
 
             return 0;

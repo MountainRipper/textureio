@@ -8,9 +8,7 @@ namespace tio {
 class SoftwareFrameConvert
 {
 public:
-    SoftwareFrameConvert();
-
-    int32_t convert(const SoftwareFrame& source,SoftwareFrame& dest,RotationMode rotate = kRotate0,FillMode fill_mode = kStretchFill);
+    static int32_t convert(const SoftwareFrame& source,SoftwareFrame& dest,RotationMode rotate = kRotate0,FillMode fill_mode = kStretchFill);
 };
 
 }//namespace tio

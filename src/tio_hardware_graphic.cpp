@@ -41,7 +41,7 @@ const std::shared_ptr<ReferenceShader> TextureIO::create_reference_shader(Graphi
 
 int32_t TextureIO::create_texture(const std::string& image,
                                    GraphicTexture &texture,
-                                  std::map<std::string,FrameArea>& areas,
+                                   std::map<std::string,FrameArea>& areas,
                                    SamplerMode sampler_mode)
 {
     std::filesystem::path image_path = image;
@@ -91,10 +91,30 @@ int32_t TextureIO::create_texture(const std::string& image,
     return ret;
 }
 
-int32_t TextureIO::release_texture(GraphicApi api, uint64_t texture_id)
+int32_t TextureIO::create_texture(const SoftwareFrame &frame, GraphicTexture &texture, SamplerMode sampler_mode)
 {
-    if(api == kGraphicApiOpenGL){
-        return TextureGenericOpenGL::release_texture(texture_id);
+    if(texture.api == kGraphicApiOpenGL){
+        return TextureGenericOpenGL::create_texture(frame,texture,sampler_mode);
+    }
+    return kErrorFormatNotSupport;
+}
+
+int32_t TextureIO::release_texture(GraphicTexture &texture)
+{
+    for(int index = 0; index < 4; index++){
+        if(texture.api == kGraphicApiOpenGL){
+            if(texture.context[index] > 0){
+                TextureGenericOpenGL::release_texture(texture.context[index]);
+            }
+        }
     }
     return 0;
+}
+
+int32_t TextureIO::release_texture(GraphicApi api,uint64_t texture_id)
+{
+    if(texture_id == kGraphicApiOpenGL){
+        return TextureGenericOpenGL::release_texture(texture_id);
+    }
+    return kErrorInvalidGraphicApi;
 }

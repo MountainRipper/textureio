@@ -252,20 +252,15 @@ void main()
 )";
 
 const char* SHADER_BODY_YUYV422 = R"(
+uniform sampler2D tex2;
 uniform vec2 videoSize;
 void main()
 {
     MEDIUMP vec3 yuv;
     LOWP vec3 rgb;
 
-    MEDIUMP vec4 yuyv = TEXTURE2D(tex1, v_texCoord);
-    if (mod(round(v_texCoord.x * videoSize.x),2.0) == 1.0) {
-        yuv.x = yuyv.r;
-    } else {
-        yuv.x = TEXTURE2D(tex1, vec2(v_texCoord.x - 1.0 / videoSize.x,v_texCoord.y)).b;
-    }
-    yuv.y = yuyv.g;
-    yuv.z = yuyv.a;
+    yuv.yz = TEXTURE2D(tex1, v_texCoord).ga;
+    yuv.x = TEXTURE2D(tex2, v_texCoord).r;
 
     yuv += offset;
     rgb = matrix * yuv;
@@ -276,20 +271,15 @@ void main()
 )";
 
 const char* SHADER_BODY_YVYU422 = R"(
+uniform sampler2D tex2;
 uniform vec2 videoSize;
 void main()
 {
     MEDIUMP vec3 yuv;
     LOWP vec3 rgb;
 
-    MEDIUMP vec4 yvyu = TEXTURE2D(tex1, v_texCoord);
-    if (mod(round(v_texCoord.x * videoSize.x),2.0) == 1.0) {
-        yuv.x = yvyu.r;
-    } else {
-        yuv.x = TEXTURE2D(tex1, vec2(v_texCoord.x - 1.0 / videoSize.x,v_texCoord.y)).b;
-    }
-    yuv.y = yvyu.a;
-    yuv.z = yvyu.g;
+    yuv.yz = TEXTURE2D(tex1, v_texCoord).ag;
+    yuv.x = TEXTURE2D(tex2, v_texCoord).r;
 
     yuv += offset;
     rgb = matrix * yuv;
@@ -300,20 +290,20 @@ void main()
 )";
 
 const char* SHADER_BODY_UYVY422 = R"(
+uniform sampler2D tex2;
 uniform vec2 videoSize;
 void main()
 {
     MEDIUMP vec3 yuv;
     LOWP vec3 rgb;
 
-    MEDIUMP vec4 uyvy = TEXTURE2D(tex1, v_texCoord);
-    if (mod(round(v_texCoord.x * videoSize.x),2.0) == 1.0) {
-        yuv.x = uyvy.g;
-    } else {
-        yuv.x = TEXTURE2D(tex1, vec2(v_texCoord.x - 1.0 / videoSize.x,v_texCoord.y)).a;
-    }
-    yuv.y = uyvy.r;
-    yuv.z = uyvy.b;
+    yuv.yz = TEXTURE2D(tex1, v_texCoord).rb;
+
+#ifdef GL_ES
+    yuv.x = TEXTURE2D(tex2, v_texCoord).a;
+#else
+    yuv.x = TEXTURE2D(tex2, v_texCoord).g;
+#endif
 
     yuv += offset;
     rgb = matrix * yuv;
@@ -492,6 +482,14 @@ public:
     {
         return program_;
     }
+    virtual SoftwareFrameFormat format() override
+    {
+        return format_;
+    }
+    virtual GraphicApi graphic_api() override
+    {
+        return mr::tio::kGraphicApiOpenGL;
+    }
     virtual int32_t use() override {
         if(program_ > 0){
             glUseProgram(program_);
@@ -556,7 +554,7 @@ public:
         const char* texture_uniform_name[] = {"tex1","tex2","tex3","tex4"};
 
         const SoftwareFormatPlaner& planers = *TextureIO::planers_of_software_frame(format_);
-        for(int index = 0; index < planers.planes_count; index++){
+        for(int index = 0; index < 4; index++){
             uniform_textures_[index] = glGetUniformLocation(program_, texture_uniform_name[index]);
         }
 
@@ -668,51 +666,46 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
 
         const Planer& planer = planers.planes[index];
         uint32_t format = channel_format[planer.channels];
-        uint32_t linesize = frame.line_size[index];
+        uint32_t linesize = frame.linesize[index];
 
         if(frame.format == kSoftwareFormatBGRA32 && bgra_support_){
             format = GL_BGRA;
         }        
 
-        glActiveTexture(GL_TEXTURE0 + texture.flags[index]);
-        VGFX_GL_CHECK("TextureGenericOpenGL::upload glActiveTexture")
-
-        glPixelStorei(GL_UNPACK_ALIGNMENT, _tio_max_align(linesize));
-        VGFX_GL_CHECK("TextureGenericOpenGL::upload glPixelStorei(GL_UNPACK_ALIGNMENT)")
-
-        glPixelStorei(GL_UNPACK_ROW_LENGTH,linesize/planer.channels);
-        VGFX_GL_CHECK("TextureGenericOpenGL::upload glPixelStorei(GL_UNPACK_ROW_LENGTH)")
-
-        glBindTexture(GL_TEXTURE_2D, texture.context[index]);
-        VGFX_GL_CHECK("TextureGenericOpenGL::upload glBindTexture")
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         GLint gl_sampler_filter = GL_LINEAR;
-        if(sampler_mode == kSamplerAuto){
-            if(frame.format == kSoftwareFormatYUYV422 || frame.format == kSoftwareFormatYVYU422 || frame.format == kSoftwareFormatUYVY422){
-                gl_sampler_filter = GL_NEAREST;
-            }
-        }
-        else if(sampler_mode == kSamplerNearest)
-            gl_sampler_filter = GL_NEAREST;
+//        if(sampler_mode == kSamplerAuto){
+//            if(frame.format == kSoftwareFormatYUYV422 || frame.format == kSoftwareFormatYVYU422 || frame.format == kSoftwareFormatUYVY422){
+//                gl_sampler_filter = GL_NEAREST;
+//            }
+//        }
+//        else if(sampler_mode == kSamplerNearest)
+//            gl_sampler_filter = GL_NEAREST;
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_sampler_filter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_sampler_filter);
-
-        glTexImage2D(GL_TEXTURE_2D,
-                   0,
-                   format,
-                   frame.width*planer.scale_x,
-                   frame.height*planer.scale_y,
-                   0,
-                   format,
-                   GL_UNSIGNED_BYTE,
-                   frame.data[index]);
-        VGFX_GL_CHECK("TextureGenericOpenGL::upload glTexImage2D")        
+        upload_to_texture(texture.context[index],
+                          texture.flags[index],
+                          planer.channels,
+                          gl_sampler_filter,
+                          format,
+                          frame.data[index],
+                          frame.width * planer.scale_x,
+                          frame.height * planer.scale_y,
+                          frame.linesize[index]);
     }
 
+    if(IS_YUV_INTERLACE_FORMAT(frame.format)){
+        if(texture.context[1] > 0){
+            upload_to_texture(texture.context[1],
+                              texture.flags[1],
+                              2,
+                              GL_LINEAR,
+                              channel_format[2],
+                              frame.data[0],
+                              frame.width,
+                              frame.height,
+                              frame.linesize[0]);
+        }
+    }
     texture.width = frame.width;
     texture.height = frame.height;
     return 0;
@@ -721,13 +714,18 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
 uint64_t TextureGenericOpenGL::create_texture(const SoftwareFrame &frame,GraphicTexture& texture,SamplerMode sampler_mode)
 {
     int planes = g_software_format_info[frame.format].planes_count;
+
+    //YUYV like format need 1 texture more
+    if(IS_YUV_INTERLACE_FORMAT(frame.format))
+        planes += 1;
+
     GLuint texture_ids[4] = {0};
     glGenTextures(planes,texture_ids);
 
     texture.api = kGraphicApiOpenGL;
     for(int index = 0; index < planes; index++){
         texture.context[index] = texture_ids[index];
-        texture.flags[0] = 1 + index;
+        texture.flags[index] = 1 + index;
         if(texture_ids[index] == 0)
             return kErrorAllocTexture;
     }
@@ -911,4 +909,45 @@ void TextureGenericOpenGL::get_capability()
             }
         }
     }
+}
+
+void TextureGenericOpenGL::upload_to_texture(int texture_id,
+                                             int texture_unit,
+                                             int channels,
+                                             int filter,
+                                             int gl_format,
+                                             uint8_t* data,
+                                             int width,
+                                             int height,
+                                              int linesize)
+{
+    glActiveTexture(GL_TEXTURE0 + texture_unit);
+    VGFX_GL_CHECK("TextureGenericOpenGL::upload glActiveTexture")
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, _tio_max_align(linesize));
+    VGFX_GL_CHECK("TextureGenericOpenGL::upload glPixelStorei(GL_UNPACK_ALIGNMENT)")
+
+    glPixelStorei(GL_UNPACK_ROW_LENGTH,linesize/channels);
+    VGFX_GL_CHECK("TextureGenericOpenGL::upload glPixelStorei(GL_UNPACK_ROW_LENGTH)")
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    VGFX_GL_CHECK("TextureGenericOpenGL::upload glBindTexture")
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+
+    glTexImage2D(GL_TEXTURE_2D,
+               0,
+               gl_format,
+               width,
+               height,
+               0,
+               gl_format,
+               GL_UNSIGNED_BYTE,
+               data);
+    VGFX_GL_CHECK("TextureGenericOpenGL::upload glTexImage2D")
 }

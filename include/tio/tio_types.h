@@ -6,13 +6,15 @@
 #include <string>
 #include <memory>
 
-#define kErrorInvalidFrame     -1
-#define kErrorFormatNotMatch   -2
-#define kErrorFormatNotSupport -3
+#define kErrorInvalidFrame       -1
+#define kErrorFormatNotMatch     -2
+#define kErrorFormatNotSupport   -3
 
-#define kErrorAllocTexture     -100
-#define kErrorInvalidTextureId -101
-#define kErrorInvalidProgram   -102
+#define kErrorAllocTexture       -100
+#define kErrorInvalidTextureId   -101
+#define kErrorInvalidProgram     -102
+#define kErrorInvalidGraphicApi  -103
+
 
 namespace mr {
 namespace tio {
@@ -56,6 +58,7 @@ enum SoftwareFrameFormat: int32_t{
 };
 
 #define IS_INTERMEDIATE_FORMAT(format) (format == kSoftwareFormatI420 || format == kSoftwareFormatI422 || format == kSoftwareFormatI444 || format == kSoftwareFormatBGRA32)
+#define IS_YUV_INTERLACE_FORMAT(format) (format == kSoftwareFormatYUYV422 || format == kSoftwareFormatYVYU422 || format == kSoftwareFormatUYVY422)
 
 enum HardwareFrameFormat: int32_t{
     kHardwareFrameNone = 0,
@@ -156,7 +159,7 @@ struct SoftwareFrame{
     uint32_t width = 0;
     uint32_t height = 0;
     uint8_t* data[4] = {0,0,0,0};
-    uint32_t line_size[4] = {0,0,0,0};
+    uint32_t linesize[4] = {0,0,0,0};
     void clear(FrameArea area = FrameArea());
 };
 struct HardwareFrame{
@@ -239,17 +242,19 @@ public:
 
 struct ReferenceShader{
     struct RenderParam{
-        int32_t view_width = 0;
+        int32_t view_width  = 0;
         int32_t view_height = 0;
-        float rotate = 0;
-        float scale_x = 1;
-        float scale_y = 1;
-        float offset_x = 0;
-        float offset_y = 0;
+        float   rotate      = 0;
+        float   scale_x     = 1;
+        float   scale_y     = 1;
+        float   offset_x    = 0;
+        float   offset_y    = 0;
     };
     virtual ~ReferenceShader();
     virtual std::string shader(ShaderType type) = 0;
     virtual uint64_t program() = 0;
+    virtual SoftwareFrameFormat format() = 0;
+    virtual GraphicApi graphic_api() = 0;
     virtual int32_t use() = 0;
     virtual int32_t render(const GraphicTexture& textures,const RenderParam& param) = 0;
 };

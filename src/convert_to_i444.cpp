@@ -9,12 +9,12 @@ void ConvertToI444::register_converter()
                                       SoftwareFrame& dest) -> int32_t {
         int8_t u_plane_index = (source.format == kSoftwareFormatI420) ? 1 : 2;
         int8_t v_plane_index = (source.format == kSoftwareFormatI420) ? 2 : 1;
-        libyuv::I420ToI444(source.data[0], source.line_size[0],
-            source.data[u_plane_index], source.line_size[u_plane_index],
-            source.data[v_plane_index], source.line_size[v_plane_index],
-            dest.data[0], dest.line_size[0],
-            dest.data[1], dest.line_size[1],
-            dest.data[2], dest.line_size[2],
+        libyuv::I420ToI444(source.data[0], source.linesize[0],
+                source.data[u_plane_index], source.linesize[u_plane_index],
+                source.data[v_plane_index], source.linesize[v_plane_index],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
             source.width, source.height);
         return 0;
     };
@@ -29,17 +29,17 @@ void ConvertToI444::register_converter()
 
         SoftwareFrameWithMemory i420 = ConvertManager::thread_temporary_frame(kSoftwareFormatI420, source.width, source.height);
 
-        libyuv::SplitUVPlane(source.data[1], source.line_size[1],
-            i420.data[u_plane_index], i420.line_size[u_plane_index],
-            i420.data[v_plane_index], i420.line_size[v_plane_index],
+        libyuv::SplitUVPlane(source.data[1], source.linesize[1],
+                i420.data[u_plane_index], i420.linesize[u_plane_index],
+                i420.data[v_plane_index], i420.linesize[v_plane_index],
             source.width / 2, source.height / 2);
 
-        libyuv::I420ToI444(source.data[0], source.line_size[0],
-            i420.data[1], i420.line_size[1],
-            i420.data[2], i420.line_size[2],
-            dest.data[0], dest.line_size[0],
-            dest.data[1], dest.line_size[1],
-            dest.data[2], dest.line_size[2],
+        libyuv::I420ToI444(source.data[0], source.linesize[0],
+                i420.data[1], i420.linesize[1],
+                i420.data[2], i420.linesize[2],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
             source.width, source.height);
         return 0;
     };
@@ -49,12 +49,12 @@ void ConvertToI444::register_converter()
     ConvertManager::add_converter(kSoftwareFormatI422, kSoftwareFormatI444,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::I422ToI444(source.data[0], source.line_size[0],
-                source.data[1], source.line_size[1],
-                source.data[2], source.line_size[2],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+        libyuv::I422ToI444(source.data[0], source.linesize[0],
+                source.data[1], source.linesize[1],
+                source.data[2], source.linesize[2],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
                 source.width, source.height);
             return 0;
         });
@@ -66,16 +66,16 @@ void ConvertToI444::register_converter()
 
         SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
 
-        libyuv::SplitUVPlane(source.data[1], source.line_size[1],
-            i422.data[u_plane_index], i422.line_size[u_plane_index],
-            i422.data[v_plane_index], i422.line_size[v_plane_index],
+        libyuv::SplitUVPlane(source.data[1], source.linesize[1],
+                i422.data[u_plane_index], i422.linesize[u_plane_index],
+                i422.data[v_plane_index], i422.linesize[v_plane_index],
             source.width / 2, source.height);
-        libyuv::I422ToI444(source.data[0], source.line_size[0],
-            i422.data[1], i422.line_size[1],
-            i422.data[2], i422.line_size[2],
-            dest.data[0], dest.line_size[0],
-            dest.data[1], dest.line_size[1],
-            dest.data[2], dest.line_size[2],
+        libyuv::I422ToI444(source.data[0], source.linesize[0],
+                i422.data[1], i422.linesize[1],
+                i422.data[2], i422.linesize[2],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
             source.width, source.height);
         return 0;
     };
@@ -87,18 +87,18 @@ void ConvertToI444::register_converter()
             SoftwareFrame& dest) -> int32_t {
             SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height );
 
-            libyuv::YUY2ToI422(source.data[0], source.line_size[0],
-                i422.data[0], i422.line_size[0],
-                i422.data[1], i422.line_size[1],
-                i422.data[2], i422.line_size[2],
+            libyuv::YUY2ToI422(source.data[0], source.linesize[0],
+                    i422.data[0], i422.linesize[0],
+                    i422.data[1], i422.linesize[1],
+                    i422.data[2], i422.linesize[2],
                 source.width, source.height);
 
-            libyuv::I422ToI444(i422.data[0], i422.line_size[0],
-                i422.data[1], i422.line_size[1],
-                i422.data[2], i422.line_size[2],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+            libyuv::I422ToI444(i422.data[0], i422.linesize[0],
+                    i422.data[1], i422.linesize[1],
+                    i422.data[2], i422.linesize[2],
+                    dest.data[0], dest.linesize[0],
+                    dest.data[1], dest.linesize[1],
+                    dest.data[2], dest.linesize[2],
                 source.width, source.height);
             return 0;
         });
@@ -109,18 +109,18 @@ void ConvertToI444::register_converter()
 
             SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
 
-            libyuv::YUY2ToI422(source.data[0], source.line_size[0],
-                i422.data[0], i422.line_size[0],
-                i422.data[2], i422.line_size[2],
-                i422.data[1], i422.line_size[1],
+            libyuv::YUY2ToI422(source.data[0], source.linesize[0],
+                    i422.data[0], i422.linesize[0],
+                    i422.data[2], i422.linesize[2],
+                    i422.data[1], i422.linesize[1],
                 source.width, source.height);
 
-            libyuv::I422ToI444(i422.data[0], i422.line_size[0],
-                i422.data[1], i422.line_size[1],
-                i422.data[2], i422.line_size[2],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+            libyuv::I422ToI444(i422.data[0], i422.linesize[0],
+                    i422.data[1], i422.linesize[1],
+                    i422.data[2], i422.linesize[2],
+                    dest.data[0], dest.linesize[0],
+                    dest.data[1], dest.linesize[1],
+                    dest.data[2], dest.linesize[2],
                 source.width, source.height);
             return 0;
         });
@@ -130,18 +130,18 @@ void ConvertToI444::register_converter()
 
             SoftwareFrameWithMemory i422 = ConvertManager::thread_temporary_frame(kSoftwareFormatI422, source.width, source.height);
 
-            libyuv::UYVYToI422(source.data[0], source.line_size[0],
-                i422.data[0], i422.line_size[0],
-                i422.data[1], i422.line_size[1],
-                i422.data[2], i422.line_size[2],
+            libyuv::UYVYToI422(source.data[0], source.linesize[0],
+                    i422.data[0], i422.linesize[0],
+                    i422.data[1], i422.linesize[1],
+                    i422.data[2], i422.linesize[2],
                 source.width, source.height);
 
-            libyuv::I422ToI444(i422.data[0], i422.line_size[0],
-                i422.data[1], i422.line_size[1],
-                i422.data[2], i422.line_size[2],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+            libyuv::I422ToI444(i422.data[0], i422.linesize[0],
+                    i422.data[1], i422.linesize[1],
+                    i422.data[2], i422.linesize[2],
+                    dest.data[0], dest.linesize[0],
+                    dest.data[1], dest.linesize[1],
+                    dest.data[2], dest.linesize[2],
                 source.width, source.height);
             return 0;
         });
@@ -149,12 +149,12 @@ void ConvertToI444::register_converter()
     ConvertManager::add_converter(kSoftwareFormatI444, kSoftwareFormatI444,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::I444Copy(source.data[0], source.line_size[0],
-                source.data[1], source.line_size[1],
-                source.data[2], source.line_size[2],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+        libyuv::I444Copy(source.data[0], source.linesize[0],
+                source.data[1], source.linesize[1],
+                source.data[2], source.linesize[2],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
                 source.width, source.height);
             return 0;
         });
@@ -164,12 +164,12 @@ void ConvertToI444::register_converter()
         int8_t u_plane_index = (source.format == kSoftwareFormatNV24) ? 1 : 2;
         int8_t v_plane_index = (source.format == kSoftwareFormatNV24) ? 2 : 1;
 
-        libyuv::SplitUVPlane(source.data[1], source.line_size[1],
-            dest.data[u_plane_index], dest.line_size[u_plane_index],
-            dest.data[v_plane_index], dest.line_size[v_plane_index],
+        libyuv::SplitUVPlane(source.data[1], source.linesize[1],
+                dest.data[u_plane_index], dest.linesize[u_plane_index],
+                dest.data[v_plane_index], dest.linesize[v_plane_index],
             source.width, source.height);
-        libyuv::CopyPlane(source.data[0], source.line_size[0],
-            dest.data[0], dest.line_size[0],
+        libyuv::CopyPlane(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
             source.width, source.height);
         return 0;
     };
@@ -179,10 +179,10 @@ void ConvertToI444::register_converter()
     ConvertManager::add_converter(kSoftwareFormatYUV444, kSoftwareFormatI444,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::SplitRGBPlane(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+        libyuv::SplitRGBPlane(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
                 source.width, source.height);
             return 0;
         });
@@ -190,10 +190,10 @@ void ConvertToI444::register_converter()
     ConvertManager::add_converter(kSoftwareFormatBGRA32, kSoftwareFormatI444,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::ARGBToI444(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                dest.data[1], dest.line_size[1],
-                dest.data[2], dest.line_size[2],
+        libyuv::ARGBToI444(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
                 source.width, source.height);
             return 0;
         });
@@ -206,17 +206,17 @@ void ConvertToI444::register_converter()
         SoftwareFrameWithMemory bgra = ConvertManager::thread_temporary_frame(kSoftwareFormatBGRA32, source.width, source.height);
 
         libyuv::ConvertToARGB(source.data[0], 0,
-            bgra.data[0], bgra.line_size[0],
+                bgra.data[0], bgra.linesize[0],
             0, 0,
-            source.line_size[0] / source_fourcc.stride_unit_0, source.height,
+                source.linesize[0] / source_fourcc.stride_unit_0, source.height,
             source.width, source.height,
             libyuv::kRotate0,
             source_fourcc.fourcc);
 
-        libyuv::ARGBToI444(bgra.data[0], bgra.line_size[0],
-            dest.data[0], dest.line_size[0],
-            dest.data[1], dest.line_size[1],
-            dest.data[2], dest.line_size[2],
+        libyuv::ARGBToI444(bgra.data[0], bgra.linesize[0],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
+                dest.data[2], dest.linesize[2],
             source.width, source.height);
         return 0;
     };
@@ -229,12 +229,12 @@ void ConvertToI444::register_converter()
     ConvertManager::add_converter(kSoftwareFormatGRAY8, kSoftwareFormatI444,
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::CopyPlane(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::CopyPlane(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
 
-            libyuv::SetPlane(dest.data[1], dest.line_size[1], dest.width, dest.height, 128);
-            libyuv::SetPlane(dest.data[2], dest.line_size[2], dest.width, dest.height, 128);
+        libyuv::SetPlane(dest.data[1], dest.linesize[1], dest.width, dest.height, 128);
+        libyuv::SetPlane(dest.data[2], dest.linesize[2], dest.width, dest.height, 128);
             return 0;
         });
     ConvertManager::add_converter(kSoftwareFormatGRAY8A, kSoftwareFormatI444,
@@ -242,13 +242,13 @@ void ConvertToI444::register_converter()
             SoftwareFrame& dest) -> int32_t {
             SoftwareFrameWithMemory alpha = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height);
 
-            libyuv::SplitUVPlane(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                alpha.data[0], alpha.line_size[0],
+            libyuv::SplitUVPlane(source.data[0], source.linesize[0],
+                    dest.data[0], dest.linesize[0],
+                    alpha.data[0], alpha.linesize[0],
                 source.width, source.height);
 
-            libyuv::SetPlane(dest.data[1], dest.line_size[1], dest.width, dest.height, 128);
-            libyuv::SetPlane(dest.data[2], dest.line_size[2], dest.width, dest.height, 128);
+            libyuv::SetPlane(dest.data[1], dest.linesize[1], dest.width, dest.height, 128);
+            libyuv::SetPlane(dest.data[2], dest.linesize[2], dest.width, dest.height, 128);
             return 0;
         });
 }

@@ -32,11 +32,11 @@ void ConvertDirect::register_copy_converter()
 
             int32_t plane_width = (source.width * plane.scale_x) * plane.channels * depth / 8;
             int32_t plane_height = source.height * plane.scale_y;
-            if(source.data[index] == nullptr || source.data[index] == nullptr || dest.line_size[index] < plane_width)
+            if(source.data[index] == nullptr || source.data[index] == nullptr || dest.linesize[index] < plane_width)
                 continue;
 
-            libyuv::CopyPlane(source.data[index], source.line_size[index],
-                              dest.data[index], dest.line_size[index],
+            libyuv::CopyPlane(source.data[index], source.linesize[index],
+                              dest.data[index], dest.linesize[index],
                               plane_width,plane_height);
         }
         return 0;
@@ -55,12 +55,12 @@ void ConvertDirect::swap_nvxx_uv_order()
 
         auto& plane = g_software_format_info[source.format].planes[1];
 
-        libyuv::CopyPlane(source.data[0],source.line_size[0],
-                dest.data[0],dest.line_size[0],
+        libyuv::CopyPlane(source.data[0],source.linesize[0],
+                dest.data[0],dest.linesize[0],
                 source.width,source.height);
 
-        libyuv::SwapUVPlane(source.data[1],source.line_size[1],
-                dest.data[1],dest.line_size[1],
+        libyuv::SwapUVPlane(source.data[1],source.linesize[1],
+                dest.data[1],dest.linesize[1],
                 source.width * plane.scale_x,source.height * plane.scale_y);
         return 0;
     };
@@ -77,8 +77,8 @@ void ConvertDirect::yuv_planer_to_gray()
     Converter planer_yuv_to_gray = [](const SoftwareFrame& source,
                                       SoftwareFrame& dest) -> int32_t {
 
-        libyuv::CopyPlane(source.data[0],source.line_size[0],
-                dest.data[0],dest.line_size[0],
+        libyuv::CopyPlane(source.data[0],source.linesize[0],
+                dest.data[0],dest.linesize[0],
                 source.width,source.height);
 
         return 0;
@@ -87,11 +87,11 @@ void ConvertDirect::yuv_planer_to_gray()
                                       SoftwareFrame& dest) -> int32_t {
 
         SoftwareFrameWithMemory alpha = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height);
-        libyuv::SetPlane(alpha.data[0], alpha.line_size[0], source.width, source.height, 255);
+        libyuv::SetPlane(alpha.data[0], alpha.linesize[0], source.width, source.height, 255);
 
-        libyuv::MergeUVPlane(source.data[0], source.line_size[0],
-            alpha.data[0], alpha.line_size[0],
-            dest.data[0], dest.line_size[0],
+        libyuv::MergeUVPlane(source.data[0], source.linesize[0],
+                alpha.data[0], alpha.linesize[0],
+                dest.data[0], dest.linesize[0],
             source.width, source.height);
 
         return 0;
@@ -111,10 +111,10 @@ void ConvertDirect::yuv_packeted_to_gray()
     Converter yuy2_to_gray = [](const SoftwareFrame& source,
                                  SoftwareFrame& dest) -> int32_t {
         SoftwareFrameWithMemory temp = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height );
-        libyuv::YUY2ToI422(source.data[0], source.line_size[0],
-            dest.data[0], dest.line_size[0],
-            temp.data[0], temp.line_size[0],
-            temp.data[0], temp.line_size[0],
+        libyuv::YUY2ToI422(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
+                temp.data[0], temp.linesize[0],
+                temp.data[0], temp.linesize[0],
             source.width, source.height);
         return 0;
     };
@@ -124,10 +124,10 @@ void ConvertDirect::yuv_packeted_to_gray()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
             SoftwareFrameWithMemory temp = ConvertManager::thread_temporary_frame( kSoftwareFormatGRAY8, source.width, source.height);
-            libyuv::UYVYToI422(source.data[0], source.line_size[0],
-                    dest.data[0], dest.line_size[0],
-                    temp.data[0], temp.line_size[0],
-                    temp.data[0], temp.line_size[0],
+            libyuv::UYVYToI422(source.data[0], source.linesize[0],
+                    dest.data[0], dest.linesize[0],
+                    temp.data[0], temp.linesize[0],
+                    temp.data[0], temp.linesize[0],
                     source.width, source.height);
             return 0;
     });
@@ -135,10 +135,10 @@ void ConvertDirect::yuv_packeted_to_gray()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
             SoftwareFrameWithMemory temp = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width, source.height);
-            libyuv::SplitRGBPlane(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                temp.data[0], temp.line_size[0],
-                temp.data[0], temp.line_size[0],
+            libyuv::SplitRGBPlane(source.data[0], source.linesize[0],
+                    dest.data[0], dest.linesize[0],
+                    temp.data[0], temp.linesize[0],
+                    temp.data[0], temp.linesize[0],
                 source.width, source.height);
 
             return 0;
@@ -150,10 +150,10 @@ void ConvertDirect::nvxx_convert_uv()
     Converter nv420_to_nv444 = [](const SoftwareFrame& source,
                                  SoftwareFrame& dest) -> int32_t {
 
-        libyuv::NV12ToNV24(source.data[0], source.line_size[0],
-            source.data[1], source.line_size[1],
-            dest.data[0], dest.line_size[0],
-            dest.data[1], dest.line_size[1],
+        libyuv::NV12ToNV24(source.data[0], source.linesize[0],
+                source.data[1], source.linesize[1],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
             source.width, source.height);
         return 0;
     };
@@ -165,13 +165,13 @@ void ConvertDirect::nvxx_convert_uv()
 
         SoftwareFrameWithMemory uv = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8A, source.width, source.height);
 
-        libyuv::NV12ToNV24(source.data[0], source.line_size[0],
-            source.data[1], source.line_size[1],
-            dest.data[0], dest.line_size[0],
-            uv.data[0], uv.line_size[0],
+        libyuv::NV12ToNV24(source.data[0], source.linesize[0],
+                source.data[1], source.linesize[1],
+                dest.data[0], dest.linesize[0],
+                uv.data[0], uv.linesize[0],
             source.width, source.height);
-        libyuv::SwapUVPlane(uv.data[0], uv.line_size[0],
-                dest.data[1], dest.line_size[1],
+        libyuv::SwapUVPlane(uv.data[0], uv.linesize[0],
+                dest.data[1], dest.linesize[1],
                 source.width, source.height);
         return 0;
     };
@@ -180,10 +180,10 @@ void ConvertDirect::nvxx_convert_uv()
 
     Converter nv422_to_nv444 = [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
-            libyuv::NV16ToNV24(source.data[0], source.line_size[0],
-                    source.data[1], source.line_size[1],
-                    dest.data[0], dest.line_size[0],
-                    dest.data[1], dest.line_size[1],
+        libyuv::NV16ToNV24(source.data[0], source.linesize[0],
+                source.data[1], source.linesize[1],
+                dest.data[0], dest.linesize[0],
+                dest.data[1], dest.linesize[1],
                     source.width, source.height);
             return 0;
     };
@@ -194,14 +194,14 @@ void ConvertDirect::nvxx_convert_uv()
 
             SoftwareFrameWithMemory uv = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8A, source.width, source.height);
 
-            libyuv::NV16ToNV24(source.data[0], source.line_size[0],
-                    source.data[1], source.line_size[1],
-                    dest.data[0], dest.line_size[0],
-                    uv.data[0], uv.line_size[0],
+            libyuv::NV16ToNV24(source.data[0], source.linesize[0],
+                    source.data[1], source.linesize[1],
+                    dest.data[0], dest.linesize[0],
+                    uv.data[0], uv.linesize[0],
                     source.width, source.height);
 
-            libyuv::SwapUVPlane(uv.data[0], uv.line_size[0],
-                    dest.data[1], dest.line_size[1],
+            libyuv::SwapUVPlane(uv.data[0], uv.linesize[0],
+                    dest.data[1], dest.linesize[1],
                     source.width, source.height);
             return 0;
     };
@@ -215,8 +215,8 @@ void ConvertDirect::rgb24_to_others()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-            libyuv::RAWToRGB24(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::RAWToRGB24(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
 
             return 0;
@@ -225,8 +225,8 @@ void ConvertDirect::rgb24_to_others()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-            libyuv::RGB24ToRAW(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::RGB24ToRAW(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
             return 0;
     });
@@ -235,8 +235,8 @@ void ConvertDirect::rgb24_to_others()
         [](const SoftwareFrame& source,
             SoftwareFrame& dest) -> int32_t {
 
-            libyuv::RAWToRGBA(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
+        libyuv::RAWToRGBA(source.data[0], source.linesize[0],
+                dest.data[0], dest.linesize[0],
                 source.width, source.height);
             return 0;
     });
@@ -246,10 +246,10 @@ void ConvertDirect::rgb24_to_others()
             SoftwareFrame& dest) -> int32_t {
 
             SoftwareFrameWithMemory temp = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width/2, source.height/2);
-            libyuv::RAWToI420(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                temp.data[0], temp.line_size[0],
-                temp.data[0], temp.line_size[0],
+            libyuv::RAWToI420(source.data[0], source.linesize[0],
+                    dest.data[0], dest.linesize[0],
+                    temp.data[0], temp.linesize[0],
+                    temp.data[0], temp.linesize[0],
                 source.width, source.height);
             return 0;
     });
@@ -259,10 +259,10 @@ void ConvertDirect::rgb24_to_others()
             SoftwareFrame& dest) -> int32_t {
 
             SoftwareFrameWithMemory temp = ConvertManager::thread_temporary_frame(kSoftwareFormatGRAY8, source.width/2, source.height/2);
-            libyuv::RGB24ToI420(source.data[0], source.line_size[0],
-                dest.data[0], dest.line_size[0],
-                temp.data[0], temp.line_size[0],
-                temp.data[0], temp.line_size[0],
+            libyuv::RGB24ToI420(source.data[0], source.linesize[0],
+                    dest.data[0], dest.linesize[0],
+                    temp.data[0], temp.linesize[0],
+                    temp.data[0], temp.linesize[0],
                 source.width, source.height);
             return 0;
     });

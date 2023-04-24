@@ -24,15 +24,15 @@ void SoftwareFrame::clear(mr::tio::FrameArea area){
                     break;
                 if(index == 0){
                     //Y plane
-                    libyuv::SetPlane(data[0] + line_size[0] * area.y + area.x,
-                            line_size[0],
+                    libyuv::SetPlane(data[0] + linesize[0] * area.y + area.x,
+                            linesize[0],
                             area.width,
                             area.height,
                             0);
                 }
                 else{
-                    libyuv::SetPlane(data[index] + (line_size[index] * int(area.y * plane.scale_y)) + (int(area.x * plane.scale_x) * plane.channels),
-                            line_size[index],
+                    libyuv::SetPlane(data[index] + (linesize[index] * int(area.y * plane.scale_y)) + (int(area.x * plane.scale_x) * plane.channels),
+                                     linesize[index],
                             area.width * plane.scale_x * plane.channels,
                             area.height * plane.scale_y,
                             128);
@@ -41,8 +41,8 @@ void SoftwareFrame::clear(mr::tio::FrameArea area){
         }
     }
     else{
-        libyuv::SetPlane(data[0] + line_size[0] * area.y + area.x * planes[0].channels,
-                line_size[0],
+        libyuv::SetPlane(data[0] + linesize[0] * area.y + area.x * planes[0].channels,
+                linesize[0],
                 area.width * planes[0].channels,
                 area.height,
                 0);
@@ -105,7 +105,7 @@ SoftwareFrameWithMemory SoftwareFrameWithMemory::clone_new()
 
 void SoftwareFrameWithMemory::fill_plane(uint8_t *data_from){
     uint8_t depth = 8;
-    line_size[0] = line_size[1] = line_size[2] = line_size[3] = 0;
+    linesize[0] = linesize[1] = linesize[2] = linesize[3] = 0;
     data[0] = data[1] = data[2] = data[3] = nullptr;
 
     uint8_t* plane_ptr = data_buffer_;
@@ -122,20 +122,16 @@ void SoftwareFrameWithMemory::fill_plane(uint8_t *data_from){
             plane_width = (plane_width + align_bytes - 1) / align_bytes * align_bytes;
         }
         uint32_t plane_height = (height * plane.scale_y);
-        line_size[index] = plane_width * plane.channels * depth / 8;
-        plane_size[index] = plane_height * line_size[index];
+        linesize[index] = plane_width * plane.channels * depth / 8;
+        plane_size[index] = plane_height * linesize[index];
         data[index] = plane_ptr;
         plane_ptr += plane_size[index];
     }
 }
 
-SoftwareFrameConvert::SoftwareFrameConvert()
-{
-    ConvertManager::init();
-}
-
 int32_t SoftwareFrameConvert::convert(const SoftwareFrame &source, SoftwareFrame &dest, RotationMode rotate, mr::tio::FillMode fill_mode)
 {
+    ConvertManager::init();
     auto source_format = source.format;
     auto dest_format = dest.format;
 

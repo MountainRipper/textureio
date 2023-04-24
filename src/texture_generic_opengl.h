@@ -20,6 +20,15 @@ public:
     static std::string reference_fragment(SoftwareFrameFormat format, YuvColorSpace color_space);
 private:
     static void get_capability();
+    static void upload_to_texture(int texture_id,
+                                  int texture_unit,
+                                  int channels,
+                                  int filter,
+                                  int gl_format,
+                                  uint8_t* data,
+                                  int width,
+                                  int height,
+                                  int linesize);
 public:
     static bool  gles_;
     static float version_;

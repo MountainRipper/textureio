@@ -195,42 +195,42 @@ int32_t ConvertManager::scale(const SoftwareFrame &source, SoftwareFrame &dest,F
         area_dest = FrameArea{0,0,dest.width,dest.height};
 
     if(format == kSoftwareFormatI420){
-        libyuv::I420Scale(source.data[0] + (source.line_size[0] * area_source.y + area_source.x), source.line_size[0],
-                source.data[1] + (source.line_size[1] * (area_source.y / 2) + (area_source.x / 2)), source.line_size[1],
-                source.data[2] + (source.line_size[1] * (area_source.y / 2) + (area_source.x / 2)), source.line_size[2],
+        libyuv::I420Scale(source.data[0] + (source.linesize[0] * area_source.y + area_source.x), source.linesize[0],
+                source.data[1] + (source.linesize[1] * (area_source.y >> 1) + (area_source.x >> 1)), source.linesize[1],
+                source.data[2] + (source.linesize[2] * (area_source.y >> 1) + (area_source.x >> 1)), source.linesize[2],
                 area_source.width,area_source.height,
-                dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x), dest.line_size[0],
-                dest.data[1] + (dest.line_size[1] * (area_dest.y / 2) + (area_dest.x / 2)), dest.line_size[1],
-                dest.data[2] + (dest.line_size[2] * (area_dest.y / 2) + (area_dest.x / 2)), dest.line_size[2],
+                dest.data[0] + (dest.linesize[0] * area_dest.y + area_dest.x), dest.linesize[0],
+                dest.data[1] + (dest.linesize[1] * (area_dest.y >> 1) + (area_dest.x >> 1)), dest.linesize[1],
+                dest.data[2] + (dest.linesize[2] * (area_dest.y >> 1) + (area_dest.x >> 1)), dest.linesize[2],
                 area_dest.width,area_dest.height,
                 filter_map_tio[sampler_mode]);
     }
     else if(format == kSoftwareFormatI422){
-        libyuv::I422Scale(source.data[0] + (source.line_size[0] * area_source.y + area_source.x), source.line_size[0],
-                source.data[1] + (source.line_size[1] * area_source.y + (area_source.x / 2)), source.line_size[1],
-                source.data[2] + (source.line_size[1] * area_source.y + (area_source.x / 2)), source.line_size[2],
+        libyuv::I422Scale(source.data[0] + (source.linesize[0] * area_source.y + area_source.x), source.linesize[0],
+                source.data[1] + (source.linesize[1] * area_source.y + (area_source.x >> 1)), source.linesize[1],
+                source.data[2] + (source.linesize[2] * area_source.y + (area_source.x >> 1)), source.linesize[2],
                 area_source.width,area_source.height,
-                dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x), dest.line_size[0],
-                dest.data[1] + (dest.line_size[1] * area_dest.y + (area_dest.x / 2)), dest.line_size[1],
-                dest.data[2] + (dest.line_size[2] * area_dest.y + (area_dest.x / 2)), dest.line_size[2],
+                dest.data[0] + (dest.linesize[0] * area_dest.y + area_dest.x), dest.linesize[0],
+                dest.data[1] + (dest.linesize[1] * area_dest.y + (area_dest.x >> 1)), dest.linesize[1],
+                dest.data[2] + (dest.linesize[2] * area_dest.y + (area_dest.x >> 1)), dest.linesize[2],
                 area_dest.width,area_dest.height,
                 filter_map_tio[sampler_mode]);
     }
     else if(format == kSoftwareFormatI444){
-        libyuv::I444Scale(source.data[0] + (source.line_size[0] * area_source.y + area_source.x), source.line_size[0],
-                source.data[1] + (source.line_size[1] * area_source.y + area_source.x), source.line_size[1],
-                source.data[2] + (source.line_size[1] * area_source.y + area_source.x), source.line_size[2],
+        libyuv::I444Scale(source.data[0] + (source.linesize[0] * area_source.y + area_source.x), source.linesize[0],
+                source.data[1] + (source.linesize[1] * area_source.y + area_source.x), source.linesize[1],
+                source.data[2] + (source.linesize[2] * area_source.y + area_source.x), source.linesize[2],
                 area_source.width,area_source.height,
-                dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x), dest.line_size[0],
-                dest.data[1] + (dest.line_size[1] * area_dest.y + area_dest.x), dest.line_size[1],
-                dest.data[2] + (dest.line_size[2] * area_dest.y + area_dest.x), dest.line_size[2],
+                dest.data[0] + (dest.linesize[0] * area_dest.y + area_dest.x), dest.linesize[0],
+                dest.data[1] + (dest.linesize[1] * area_dest.y + area_dest.x), dest.linesize[1],
+                dest.data[2] + (dest.linesize[2] * area_dest.y + area_dest.x), dest.linesize[2],
                 area_dest.width,area_dest.height,
                 filter_map_tio[sampler_mode]);
     }
     else if(format == kSoftwareFormatBGRA32){
-        libyuv::ARGBScale(source.data[0] + (source.line_size[0] * area_source.y + area_source.x * 4), source.line_size[0],
+        libyuv::ARGBScale(source.data[0] + (source.linesize[0] * area_source.y + area_source.x * 4), source.linesize[0],
                 area_source.width,area_source.height,
-                dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x * 4), dest.line_size[0],
+                dest.data[0] + (dest.linesize[0] * area_dest.y + area_dest.x * 4), dest.linesize[0],
                 area_dest.width,area_dest.height,
                 filter_map_tio[sampler_mode]);        
     }
@@ -248,95 +248,6 @@ int32_t ConvertManager::scale(const SoftwareFrame &source, SoftwareFrame &dest,F
     }
     return 0;
 }
-/*
-int32_t ConvertManager::scale(const SoftwareFrame &source, SoftwareFrame &dest,FrameArea area_source,  FrameArea area_dest, SamplerMode sampler_mode)
-{
-    SoftwareFrameFormat format = source.format;
-    if(format != dest.format)
-        return kErrorFormatNotMatch;
-
-    if(area_source.width == 0 || area_dest.height == 0)
-        area_source = FrameArea{0,0,source.width,source.height};
-
-    if(area_dest.width == 0 || area_dest.height == 0)
-        area_dest = FrameArea{0,0,dest.width,dest.height};
-
-    SoftwareFrameWithMemory scaled_temp = ConvertManager::thread_temporary_frame(source.format,area_dest.width,area_dest.height,'s');
-
-    if(format == kSoftwareFormatI420){
-//        libyuv::I420Scale(source.data[0] + (source.line_size[0] * area_source.y + area_source.x), source.line_size[0],
-//                source.data[1] + (source.line_size[1] * (area_source.y / 2) + (area_source.x / 2)), source.line_size[1],
-//                source.data[2] + (source.line_size[1] * (area_source.y / 2) + (area_source.x / 2)), source.line_size[2],
-//                area_source.width,area_source.height,
-//                scaled_temp.data[0],scaled_temp.line_size[0],
-//                scaled_temp.data[1],scaled_temp.line_size[1],
-//                scaled_temp.data[2],scaled_temp.line_size[2],
-//                scaled_temp.width,scaled_temp.height,
-//                filter_map_tio[sampler_mode]);
-
-//        libyuv::I420Copy(scaled_temp.data[0],scaled_temp.line_size[0],
-//                scaled_temp.data[1],scaled_temp.line_size[1],
-//                scaled_temp.data[2],scaled_temp.line_size[2],
-//                dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x), dest.line_size[0],
-//                dest.data[1] + (dest.line_size[1] * (area_dest.y / 2) + (area_dest.x / 2)), dest.line_size[1],
-//                dest.data[2] + (dest.line_size[2] * (area_dest.y / 2) + (area_dest.x / 2)), dest.line_size[2],
-//                scaled_temp.width,scaled_temp.height);
-
-    }
-    else if(format == kSoftwareFormatI422){
-        libyuv::I422Scale(source.data[0] + (source.line_size[0] * area_source.y + area_source.x), source.line_size[0],
-                source.data[1] + (source.line_size[1] * area_source.y + (area_source.x / 2)), source.line_size[1],
-                source.data[2] + (source.line_size[1] * area_source.y + (area_source.x / 2)), source.line_size[2],
-                area_source.width,area_source.height,
-                scaled_temp.data[0],scaled_temp.line_size[0],
-                scaled_temp.data[1],scaled_temp.line_size[1],
-                scaled_temp.data[2],scaled_temp.line_size[2],
-                scaled_temp.width,scaled_temp.height,
-                filter_map_tio[sampler_mode]);
-
-        libyuv::I422Copy(scaled_temp.data[0],scaled_temp.line_size[0],
-                scaled_temp.data[1],scaled_temp.line_size[1],
-                scaled_temp.data[2],scaled_temp.line_size[2],
-                dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x), dest.line_size[0],
-                dest.data[1] + (dest.line_size[1] * area_dest.y + (area_dest.x / 2)), dest.line_size[1],
-                dest.data[2] + (dest.line_size[2] * area_dest.y + (area_dest.x / 2)), dest.line_size[2],
-                scaled_temp.width,scaled_temp.height);
-    }
-    else if(format == kSoftwareFormatI444){
-        libyuv::I444Scale(source.data[0] + (source.line_size[0] * area_source.y + area_source.x), source.line_size[0],
-                source.data[1] + (source.line_size[1] * area_source.y + area_source.x), source.line_size[1],
-                source.data[2] + (source.line_size[1] * area_source.y + area_source.x), source.line_size[2],
-                area_source.width,area_source.height,
-                scaled_temp.data[0],scaled_temp.line_size[0],
-                scaled_temp.data[1],scaled_temp.line_size[1],
-                scaled_temp.data[2],scaled_temp.line_size[2],
-                scaled_temp.width,scaled_temp.height,
-                filter_map_tio[sampler_mode]);
-
-        libyuv::I422Copy(scaled_temp.data[0],scaled_temp.line_size[0],
-                scaled_temp.data[1],scaled_temp.line_size[1],
-                scaled_temp.data[2],scaled_temp.line_size[2],
-                dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x), dest.line_size[0],
-                dest.data[1] + (dest.line_size[1] * area_dest.y + area_dest.x), dest.line_size[1],
-                dest.data[2] + (dest.line_size[2] * area_dest.y + area_dest.x), dest.line_size[2],
-                scaled_temp.width,scaled_temp.height);
-    }
-    else if(format == kSoftwareFormatBGRA32){
-//        libyuv::ARGBScale(source.data[0] + (source.line_size[0] * area_source.y + area_source.x * 4), source.line_size[0],
-//                area_source.width,area_source.height,
-//                scaled_temp.data[0],scaled_temp.line_size[0],
-//                scaled_temp.width,scaled_temp.height,
-//                filter_map_tio[sampler_mode]);
-scaled_temp.clear();
-        libyuv::ARGBCopy(scaled_temp.data[0],scaled_temp.line_size[0],
-                dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x * 4), dest.line_size[0],
-                area_dest.width,area_dest.height);
-    }
-    else{
-        return kErrorFormatNotSupport;
-    }
-    return 0;
-}*/
 
 int32_t ConvertManager::rotate(const SoftwareFrame &source, SoftwareFrame &dest, FrameArea area_source, FrameArea area_dest, RotationMode rotate)
 {
@@ -360,39 +271,39 @@ int32_t ConvertManager::rotate(const SoftwareFrame &source, SoftwareFrame &dest,
     }
 
     if(format == kSoftwareFormatI420){
-        libyuv::I420Rotate(source.data[0] + (source.line_size[0] * area_source.y + area_source.x), source.line_size[0],
-                    source.data[1] + (source.line_size[1] * area_source.y / 2 + area_source.x / 2), source.line_size[1],
-                    source.data[2] + (source.line_size[2] * area_source.y / 2 + area_source.x / 2), source.line_size[2],
-                    dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x), dest.line_size[0],
-                    dest.data[1] + (dest.line_size[1] * (area_dest.y / 2) + (area_dest.x / 2)), dest.line_size[1],
-                    dest.data[2] + (dest.line_size[2] * (area_dest.y / 2) + (area_dest.x / 2)), dest.line_size[2],
+        libyuv::I420Rotate(source.data[0] + (source.linesize[0] * area_source.y + area_source.x), source.linesize[0],
+                source.data[1] + (source.linesize[1] * (area_source.y >> 1) + (area_source.x >> 1)), source.linesize[1],
+                source.data[2] + (source.linesize[2] *(area_source.y >> 1)+ (area_source.x >> 1)), source.linesize[2],
+                dest.data[0] + (dest.linesize[0] * area_dest.y + area_dest.x), dest.linesize[0],
+                dest.data[1] + (dest.linesize[1] * (area_dest.y >> 1) + (area_dest.x >> 1)), dest.linesize[1],
+                dest.data[2] + (dest.linesize[2] * (area_dest.y >> 1) + (area_dest.x >> 1)), dest.linesize[2],
                     area_source.width, area_source.height,
                     static_cast<libyuv::RotationMode>(rotate));
     }
     else if(format == kSoftwareFormatI422){
-        libyuv::I422Rotate(source.data[0] + (source.line_size[0] * area_source.y + area_source.x), source.line_size[0],
-                    source.data[1] + (source.line_size[1] * area_source.y + area_source.x / 2), source.line_size[1],
-                    source.data[2] + (source.line_size[2] * area_source.y + area_source.x / 2), source.line_size[2],
-                    dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x), dest.line_size[0],
-                    dest.data[1] + (dest.line_size[1] * area_dest.y + (area_dest.x / 2)), dest.line_size[1],
-                    dest.data[2] + (dest.line_size[2] * area_dest.y + (area_dest.x / 2)), dest.line_size[2],
+        libyuv::I422Rotate(source.data[0] + (source.linesize[0] * area_source.y + area_source.x), source.linesize[0],
+                source.data[1] + (source.linesize[1] * area_source.y + (area_source.x >> 1)), source.linesize[1],
+                source.data[2] + (source.linesize[2] * area_source.y + (area_source.x >> 1)), source.linesize[2],
+                dest.data[0] + (dest.linesize[0] * area_dest.y + area_dest.x), dest.linesize[0],
+                dest.data[1] + (dest.linesize[1] * area_dest.y + (area_dest.x >> 1)), dest.linesize[1],
+                dest.data[2] + (dest.linesize[2] * area_dest.y + (area_dest.x >> 1)), dest.linesize[2],
                     area_source.width, area_source.height,
                     static_cast<libyuv::RotationMode>(rotate));
 
     }
     else if(format == kSoftwareFormatI444){
-        libyuv::I444Rotate(source.data[0] + (source.line_size[0] * area_source.y + area_source.x), source.line_size[0],
-                    source.data[1] + (source.line_size[1] * area_source.y + area_source.x), source.line_size[1],
-                    source.data[2] + (source.line_size[2] * area_source.y + area_source.x), source.line_size[2],
-                    dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x), dest.line_size[0],
-                    dest.data[1] + (dest.line_size[1] * area_dest.y + area_dest.x), dest.line_size[1],
-                    dest.data[2] + (dest.line_size[2] * area_dest.y + area_dest.x), dest.line_size[2],
+        libyuv::I444Rotate(source.data[0] + (source.linesize[0] * area_source.y + area_source.x), source.linesize[0],
+                source.data[1] + (source.linesize[1] * area_source.y + area_source.x), source.linesize[1],
+                source.data[2] + (source.linesize[2] * area_source.y + area_source.x), source.linesize[2],
+                dest.data[0] + (dest.linesize[0] * area_dest.y + area_dest.x), dest.linesize[0],
+                dest.data[1] + (dest.linesize[1] * area_dest.y + area_dest.x), dest.linesize[1],
+                dest.data[2] + (dest.linesize[2] * area_dest.y + area_dest.x), dest.linesize[2],
                     area_source.width, area_source.height,
                     static_cast<libyuv::RotationMode>(rotate));
     }
     else if(format == kSoftwareFormatBGRA32){
-        libyuv::ARGBRotate(source.data[0] + (source.line_size[0] * area_source.y + area_source.x * 4), source.line_size[0],
-                    dest.data[0] + (dest.line_size[0] * area_dest.y + area_dest.x * 4), dest.line_size[0],
+        libyuv::ARGBRotate(source.data[0] + (source.linesize[0] * area_source.y + area_source.x * 4), source.linesize[0],
+                dest.data[0] + (dest.linesize[0] * area_dest.y + area_dest.x * 4), dest.linesize[0],
                     area_source.width, area_source.height,
                     static_cast<libyuv::RotationMode>(rotate));
     }
@@ -405,11 +316,11 @@ int32_t ConvertManager::rotate(const SoftwareFrame &source, SoftwareFrame &dest,
 
 SoftwareFrameWithMemory ConvertManager::thread_temporary_frame(SoftwareFrameFormat format, uint32_t width, uint32_t height, uint8_t id)
 {
-//    SoftwareFrameWithMemory frame = SoftwareFrameWithMemory(format,width,height);
-//    frame.alloc();
-//    return frame;
-    if(temporary_frames_.find(id) == temporary_frames_.end()){
-        temporary_frames_[id] = ThreadTemporaryFrame();
-    }
-    return temporary_frames_[id].get_temporary_frame(width,height,format);
+    SoftwareFrameWithMemory frame = SoftwareFrameWithMemory(format,width,height);
+    frame.alloc();
+    return frame;
+//    if(temporary_frames_.find(id) == temporary_frames_.end()){
+//        temporary_frames_[id] = ThreadTemporaryFrame();
+//    }
+//    return temporary_frames_[id].get_temporary_frame(width,height,format);
 }

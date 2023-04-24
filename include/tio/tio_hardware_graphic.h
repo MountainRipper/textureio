@@ -25,8 +25,12 @@ public:
 
     static int32_t create_texture(const std::string& image,
                                    GraphicTexture &texture,
-                                  std::map<std::string,FrameArea>& areas,
+                                   std::map<std::string,FrameArea>& areas,
                                    SamplerMode sampler_mode = kSamplerAuto);
+    static int32_t create_texture(const SoftwareFrame& frame,
+                                   GraphicTexture &texture,
+                                   SamplerMode sampler_mode = kSamplerAuto);
+    static int32_t release_texture(GraphicTexture &texture);
     static int32_t release_texture(GraphicApi api,uint64_t texture_id);
 };
 

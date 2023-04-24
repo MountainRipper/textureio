@@ -206,13 +206,12 @@ int32_t TextureioExample::on_frame()
         ImGui::Begin("Control Panel",NULL,window_flags);
         int format_old = source_format_;
         int origin_image_old = origin_image_use_;
-        ImGui::SetNextItemWidth(150);
-        ImGui::Combo("InputFormat", &source_format_, format_names, IM_ARRAYSIZE(format_names));ImGui::SameLine();
-        ImGui::Checkbox("  ShowSourceOnly",&show_source_);
-
         ImGui::Text("Image:"); ImGui::SameLine();
         ImGui::RadioButton("Spectacle", &origin_image_use_, 0); ImGui::SameLine();
-        ImGui::RadioButton("Tiger", &origin_image_use_, 1);
+        ImGui::RadioButton("Tiger", &origin_image_use_, 1);ImGui::SameLine();ImGui::SetNextItemWidth(150);
+        ImGui::Combo("Format", &source_format_, format_names, IM_ARRAYSIZE(format_names));ImGui::SameLine();
+        ImGui::Checkbox("  ShowSourceOnly",&show_source_);
+
 
         int rotate_old_ = rotate_;
         ImGui::Text("Convert Rotate:"); ImGui::SameLine();
@@ -251,8 +250,8 @@ int32_t TextureioExample::on_frame()
         ImGui::RadioButton("2020F", &colorspace_, 6);
 
         ImGui::Text("Render:"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
-        ImGui::DragFloat("scaleX",&render_scale_x_, (render_scale_x_<=1?0.05:0.2), 0.2, 5.0,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
-        ImGui::DragFloat("scaleY",&render_scale_y_, (render_scale_x_<=1?0.05:0.2), 0.2, 5.0,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
+        ImGui::DragFloat("scaleX",&render_scale_x_, (abs(render_scale_x_)<=1?0.05:0.2), -5.0, 5.0,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
+        ImGui::DragFloat("scaleY",&render_scale_y_, (abs(render_scale_x_)<=1?0.05:0.2), -5.0, 5.0,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
         ImGui::DragFloat("offsetX",&render_offset_x_, 0.025, -1, 1,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
         ImGui::DragFloat("offsetY",&render_offset_y_, 0.025, -1, 1,"%.2f"); ImGui::SameLine();ImGui::SetNextItemWidth(80);
         ImGui::DragFloat("rotate",&render_rotate_, 1, 0, 360,"%.2f");ImGui::SameLine();
@@ -264,7 +263,6 @@ int32_t TextureioExample::on_frame()
             render_rotate_ = 0;
         }
 
-        ImGui::Text("Frame Size:%dx%d",final_size_.width,final_size_.height);
         ImGui::End();
 
         if(origin_image_old != origin_image_use_ || rotate_old_ != rotate_)
@@ -335,7 +333,7 @@ void TextureioExample::convert_to_target_frames()
     final_size_.width = (final_size_.width+1) / 2 * 2;
     final_size_.height = (final_size_.height+1) / 2 * 2;
 
-    fprintf(stderr,"Final size %dx%d\n",final_size_.width,final_size_.height);
+    fprintf(stderr,"Final size %dx%d format:%s\n",final_size_.width,final_size_.height,g_software_format_info[source_format_].name);
 
     MR_TIMER_NEW(aa);
     for(int index = 0; index < kSoftwareFormatCount; index++){
