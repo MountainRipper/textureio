@@ -18,9 +18,9 @@ struct Image{
         this->file_path = file_path;
     }
     int32_t load(){
-        auto image_buffer = stbi_load(file_path.c_str(),&width,&height,&channels,4);
+        auto image_buffer = stbi_load(file_path.string().c_str(),&width,&height,&channels,4);
         if(channels != 4){
-            fprintf(stderr,"image:%s not a 4 channel rgba png file\n",file_path.c_str());
+            fprintf(stderr,"image:%s not a 4 channel rgba png file\n",file_path.string().c_str());
             return -1;
         }
         uint32_t image_bytes = width*height*4;
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
             target_ptr += target_stride;
         }
 
-        menifest["imageAreas"][image.file_path.filename()] = {{"x",rect.x},{"y",rect.y},{"w",image.width},{"h",image.height}};
+        menifest["imageAreas"][image.file_path.filename().string()] = {{"x",rect.x},{"y",rect.y},{"w",image.width},{"h",image.height}};
     }
 
     std::string image_file = filename + ".png";

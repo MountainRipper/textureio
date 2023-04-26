@@ -45,7 +45,7 @@ int32_t TextureIO::create_texture(const std::string& image,
                                    SamplerMode sampler_mode)
 {
     std::filesystem::path image_path = image;
-    std::string ext = image_path.extension();
+    std::string ext = image_path.extension().string();
     if(image_path.extension() == ".json"){
 
         std::ifstream ifs(image_path.string());
@@ -70,7 +70,7 @@ int32_t TextureIO::create_texture(const std::string& image,
     int pic_width = 0;
     int pic_height = 0;
     int channels = 4;//as rgb
-    auto image_data = stbi_load(image_path.c_str(),&pic_width,&pic_height,&channels,channels);
+    auto image_data = stbi_load(image_path.string().c_str(),&pic_width,&pic_height,&channels,channels);
     if(image_data == nullptr)
         return kErrorInvalidFrame;
 
@@ -86,7 +86,7 @@ int32_t TextureIO::create_texture(const std::string& image,
     stbi_image_free(image_data);
 
     FrameArea area = {0,0,(uint32_t)pic_width,(uint32_t)pic_height};
-    areas[image_path] = area;
+    areas[image_path.string()] = area;
 
     return ret;
 }
