@@ -74,9 +74,7 @@ int32_t TextureIO::create_texture(const std::string& image,
     if(image_data == nullptr)
         return kErrorInvalidFrame;
 
-    SoftwareFrameFormat formats_of_channel[] = {kSoftwareFormatNone,kSoftwareFormatGRAY8,kSoftwareFormatGRAY8A,kSoftwareFormatRGB24,kSoftwareFormatRGBA32};
-
-    SoftwareFrameWithMemory frame(formats_of_channel[channels],pic_width,pic_height);
+    SoftwareFrameWithMemory frame(g_software_format_channel[channels],pic_width,pic_height);
     frame.attach(image_data);
 
     int ret = 0;

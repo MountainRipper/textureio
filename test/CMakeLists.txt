@@ -16,7 +16,7 @@ if(${MP_TARGET_OS} MATCHES "linux")
     target_link_libraries(sdl_tio  glad SDL2 X11 mr-common textureio GLESv2 EGL)
 elseif(${MP_TARGET_OS} MATCHES "windows")
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        target_link_libraries(sdl_tio glad SDL2.dll mr-common textureio)
+        target_link_libraries(sdl_tio glad SDL2.dll mr-common textureio dwmapi)
     endif()
 elseif(${MP_TARGET_OS} MATCHES "darwin")
 
@@ -28,3 +28,4 @@ endif()
 
 file( GLOB SOURCE_PNG_PACKAGE png_merge.cpp)
 add_executable(png_merge ${SOURCE_PNG_PACKAGE})
+target_link_libraries(png_merge textureio)

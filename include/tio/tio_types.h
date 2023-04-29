@@ -9,6 +9,7 @@
 #define kErrorInvalidFrame       -1
 #define kErrorFormatNotMatch     -2
 #define kErrorFormatNotSupport   -3
+#define kErrorInvalidFrameSize   -4
 
 #define kErrorAllocTexture       -100
 #define kErrorInvalidTextureId   -101
@@ -218,6 +219,7 @@ static const SoftwareFormatPlaner g_software_format_info[kSoftwareFormatCount] =
     [kSoftwareFormatGRAY8A ] = {"GRAY8A", 16,1,{{1,1,2},{},{},{}}}
 };
 
+static const SoftwareFrameFormat g_software_format_channel[5] = {kSoftwareFormatNone,kSoftwareFormatGRAY8,kSoftwareFormatGRAY8A,kSoftwareFormatRGB24,kSoftwareFormatRGBA32};
 
 struct SoftwareFrameWithMemory : public SoftwareFrame{
 
@@ -227,10 +229,10 @@ public:
     SoftwareFrameWithMemory(SoftwareFrameFormat format,uint32_t width, uint32_t height);
     SoftwareFrameWithMemory(SoftwareFrameFormat format,uint32_t width, uint32_t height,uint8_t* data);
     //alloc buffer and fill data,linesize
-    void alloc();
+    SoftwareFrameWithMemory& alloc();
     //attach buffer must be no padding linesize
-    void attach(uint8_t* data);
-    void clone_from(const SoftwareFrameWithMemory& data);
+    SoftwareFrameWithMemory& attach(uint8_t* data);
+    SoftwareFrameWithMemory& clone_from(const SoftwareFrameWithMemory& data);
     SoftwareFrameWithMemory clone_new();
 private:
     void fill_plane(uint8_t* data_from = nullptr);

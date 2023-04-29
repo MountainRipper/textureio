@@ -70,30 +70,33 @@ SoftwareFrameWithMemory::SoftwareFrameWithMemory(SoftwareFrameFormat format, uin
     attach(data);
 }
 
-void SoftwareFrameWithMemory::alloc(){
+SoftwareFrameWithMemory& SoftwareFrameWithMemory::alloc(){
     uint32_t width_adjust = (width + 1) & ~1;
     uint32_t bpp = g_software_format_info[format].bpp;
     uint32_t bytes = width_adjust*height*bpp/8;
     frame_memory_ = std::shared_ptr<uint8_t>(new uint8_t[bytes],std::default_delete<uint8_t[]>());
     data_buffer_ = frame_memory_.get();
     fill_plane();
+    return *this;
 }
 
-void SoftwareFrameWithMemory::attach(uint8_t *data){
+SoftwareFrameWithMemory& SoftwareFrameWithMemory::attach(uint8_t *data){
     data_buffer_ = data;
     fill_plane();
+    return *this;
 }
 
-void SoftwareFrameWithMemory::clone_from(const SoftwareFrameWithMemory &source){
-    this->format = format;
-    this->width = width;
-    this->height = height;
+SoftwareFrameWithMemory& SoftwareFrameWithMemory::clone_from(const SoftwareFrameWithMemory &source){
+    this->format = source.format;
+    this->width = source.width;
+    this->height = source.height;
     alloc();
 
     uint8_t depth = 8;
 
     auto copy_converter = ConvertManager::get_convertor(format,format);
     copy_converter(source,*static_cast<SoftwareFrame*>(this));
+    return *this;
 }
 
 SoftwareFrameWithMemory SoftwareFrameWithMemory::clone_new()
