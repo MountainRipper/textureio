@@ -84,8 +84,10 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
         rect.was_packed = 0;
         rects.push_back(rect);
 
-        if(frame.width > width_max)
-            width_max = frame.width;
+        if(rect.w > width_max)
+            width_max = rect.w;
+        if(rect.h > width_max)
+            width_max = rect.h;
         totle_pixels += frame.width * frame.height;
 
         index++;
@@ -93,9 +95,9 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
 
     bool pot = context_->pow_of_two_;
 
-    auto calc_target_size = [](int32_t pixels,int32_t max_size,bool pot,int32_t step = 100) ->int32_t {
-        int32_t target_size = pot ? 128 : 100;
-        while ((target_size *target_size) < (pixels*1.1)) {
+    auto calc_target_size = [](int32_t pixels,int32_t max_size,int32_t min_size = 0,bool pot,int32_t step = 100) ->int32_t {
+        int32_t target_size =  pot ? 128 : 100;
+        while ((target_size * target_size) < (pixels*1.1) || ( min_size > 0 && target_size < min_size)) {
             int32_t next_size = pot ? target_size * 2 : target_size + step;
             if(next_size > max_size)
                 break;
@@ -105,7 +107,7 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
         return target_size;
     };
     //decide a target size
-    int target_size = calc_target_size(totle_pixels,context_->max_size_,context_->pow_of_two_);
+    int target_size = calc_target_size(totle_pixels,context_->max_size_,width_max,context_->pow_of_two_);
 
     int nodes_count = 4096;
     struct stbrp_node nodes[4096];
@@ -123,7 +125,7 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
         {
             if(rect.was_packed == 0){
                 int32_t next_size = pot ? target_size*2 : target_size+100;
-                if(next_size < context_->max_size_){
+                if(next_size <= context_->max_size_){
                     target_size = next_size;
                     fprintf(stderr,"item not packaged, increase target size to:%d\n",target_size);
                     continue;
@@ -135,11 +137,17 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
 
         rects_unpacked.clear();
         rects_packed.clear();
+        width_max = 0;
         for (const auto& rect : rects)
         {
-            fprintf(stderr,"rect %i (%hu,%hu) was_packed=%i\n", rect.id, rect.x, rect.y, rect.was_packed);
-            if(rect.was_packed == 0)
+            fprintf(stderr,"rect %i (%hu*%hu) (%hu,%hu) was_packed=%i\n", rect.id, rect.w, rect.h, rect.x, rect.y, rect.was_packed);
+            if(rect.was_packed == 0){
                 rects_unpacked.push_back(rect);
+                if(rect.w > width_max)
+                    width_max = rect.w;
+                if(rect.h > width_max)
+                    width_max = rect.h;
+            }
             else
                 rects_packed.push_back(rect);
         }
@@ -181,7 +189,7 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
 
             image_index++;
             //reset target size
-            target_size = target_size = calc_target_size(totle_pixels,context_->max_size_,context_->pow_of_two_);
+            target_size = target_size = calc_target_size(totle_pixels,context_->max_size_,width_max,context_->pow_of_two_);
         }
     }while(rects_unpacked.size());
 
