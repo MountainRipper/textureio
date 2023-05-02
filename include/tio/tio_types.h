@@ -141,7 +141,7 @@ struct FrameArea{
         if(view_ratio >= target_ratio){
             width = round(view_height * target_ratio);
             height = view_height;
-            x = (view_width - width) / 2; //it will outside of view
+            x = (view_width - width) / 2;
             y = 0;
         }
         else{
@@ -149,7 +149,7 @@ struct FrameArea{
             width  = view_width;
             height = round(view_width / target_ratio);
             x = 0;
-            y = (view_height - height) / 2;  //it will outside of view
+            y = (view_height - height) / 2;
         }
         return ;
     }
@@ -167,7 +167,7 @@ struct HardwareFrame{
     HardwareFrameFormat format;
     uint32_t width = 0;
     uint32_t height = 0;
-    void* context{nullptr};
+    void* context = nullptr;
 };
 
 struct GraphicTexture{
@@ -202,7 +202,7 @@ static const SoftwareFormatPlaner g_software_format_info[kSoftwareFormatCount] =
     [kSoftwareFormatI422   ] = {"I422",   16,3,{{1,1,1},{0.5,1,1},{0.5,1,1},{}}},
     [kSoftwareFormatNV16   ] = {"NV16",   16,2,{{1,1,1},{0.5,1,2},{},{}}},
     [kSoftwareFormatNV61   ] = {"NV61",   16,2,{{1,1,1},{0.5,1,2},{},{}}},
-    [kSoftwareFormatYUYV422] = {"YUYV422",16,1,{{0.5,1,4},{},{},{}}}, // 0.5 sampels of width, but 4ch-32bit per sample,rgba=y1-u-y2-v
+    [kSoftwareFormatYUYV422] = {"YUYV422",16,1,{{0.5,1,4},{},{},{}}}, // half sampels of width, but 4ch-32bit per sample,rgba=y1-u-y2-v
     [kSoftwareFormatYVYU422] = {"YVYU422",16,1,{{0.5,1,4},{},{},{}}}, // same as above
     [kSoftwareFormatUYVY422] = {"UYVY422",16,1,{{0.5,1,4},{},{},{}}}, // same as above
     [kSoftwareFormatI444   ] = {"I444",   24,3,{{1,1,1},{1,1,1},{1,1,1},{}}},
@@ -219,7 +219,7 @@ static const SoftwareFormatPlaner g_software_format_info[kSoftwareFormatCount] =
     [kSoftwareFormatGRAY8A ] = {"GRAY8A", 16,1,{{1,1,2},{},{},{}}}
 };
 
-static const SoftwareFrameFormat g_software_format_channel[5] = {kSoftwareFormatNone,kSoftwareFormatGRAY8,kSoftwareFormatGRAY8A,kSoftwareFormatRGB24,kSoftwareFormatRGBA32};
+static const SoftwareFrameFormat g_software_format_of_channel[5] = {kSoftwareFormatNone,kSoftwareFormatGRAY8,kSoftwareFormatGRAY8A,kSoftwareFormatRGB24,kSoftwareFormatRGBA32};
 
 struct SoftwareFrameWithMemory : public SoftwareFrame{
 
