@@ -24,4 +24,20 @@ DirectX9/11/12, Vulkan, Metal
 计划中硬件视频格式:
 Linux: VAAPI,VDPAU,DRM Prime. Windows:ID3D11Texture2D,ID3D11VideoDecoderOutputView,LPDIRECT3DSURFACE9. Android: HardwareBuffer. Apple:VideoToolBox
 
-![示例](./doc/screenshot.png "sdl2 test sample")
+支持的OS:
+Linux,Windows(已测试)
+macOS，iOS，Android，*BSD（未测试，计划中）
+
+目前项目处于紧密开发中，作为多媒体框架SDMP，短视频SDK Brilliant的功能子库存在，但可以单独使用
+编译需要三方依赖库，请clone https://github.com/MountainRipper/third_party.git 到同级目录，并运行build.sh进行编译(linux),windows先运行build.bat,这将会首先安装msys2环境并启动，此时项目被挂载到/MountainRipper/third_party，进入该目录运行build.sh即可(会自动安装编译器和所需工具)
+
+<img src="./doc/screenshot.png" />
+
+
+该项目以及SDMP，Brilliant将会持续开发，感兴趣的可以保持关注，欢迎加入讨论群
+
+<img src="./doc/qr-brilliant.jpg" width = "320" height = "450"  />
+
+二维码失效可加我本人
+
+<img src="./doc/qr-myself.jpg" width = "320" height = "435" />
