@@ -6,7 +6,7 @@
 #include <stb/stb_image_write.h>
 #include <nlohmann/json.hpp>
 #include <libyuv.h>
-#include "tio_software_frame.h"
+#include <tio/tio_software_frame.h>
 
 namespace mr::tio{
 

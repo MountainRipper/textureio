@@ -108,20 +108,20 @@ int32_t TextureioExample::on_frame()
 
         float upload_ms = 0;
         auto shader = programs_[source_format_];
-        glFinish();
+        //glFinish();
         MR_TIMER_NEW(timer);
         if(shader != nullptr){
             shader->use();
 
             TextureIO::software_frame_to_graphic(source_image_,texture,(SamplerMode)sampler_mode_);
-            glFinish();
+            //glFinish();
             upload_ms = MR_TIMER_MS_RESET(timer);
 
             glViewport(0,0,width_,height_);
 
             mr::tio::ReferenceShader::RenderParam param{int32_t(width_),int32_t(height_),render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
             shader->render(texture,param);
-            glFinish();
+            //glFinish();
         }
 
         float render_ms = MR_TIMER_MS(timer);
@@ -153,11 +153,11 @@ int32_t TextureioExample::on_frame()
 
                 shader->use();
 
-                glFinish();
+                //glFinish();
                 MR_TIMER_NEW(timer);
                 {
                     TextureIO::software_frame_to_graphic(*frame,texture,(SamplerMode)sampler_mode_);
-                    glFinish();
+                    //glFinish();
                 }
                 float upload_ms = MR_TIMER_MS_RESET(timer);
 
@@ -173,7 +173,7 @@ int32_t TextureioExample::on_frame()
 
                     mr::tio::ReferenceShader::RenderParam param{int32_t(area.width),int32_t(area.height),render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
                     shader->render(texture,param);
-                    glFinish();
+                    //glFinish();
                 }
                 float render_ms = MR_TIMER_MS(timer);
 

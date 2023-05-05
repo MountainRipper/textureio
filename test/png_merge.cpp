@@ -8,7 +8,7 @@
 #include <stb/stb_rect_pack.h>
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
-#include <tio_software_frame.h>
+#include <tio/tio_software_frame.h>
 
 #include <cxxopts.hpp>
 

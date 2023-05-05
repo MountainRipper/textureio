@@ -2,47 +2,53 @@ cmake_minimum_required(VERSION 3.14)
 
 project(textureio LANGUAGES CXX)
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(NOT DEFINED ${MP_TARGET_OS})
-    set(MP_TARGET_OS ${CMAKE_SYSTEM_NAME})
+
+#######################arch/os/3rd_party detect#######################
+if(NOT DEFINED MR_TARGET_OS)
+    set(MR_TARGET_OS ${CMAKE_SYSTEM_NAME})
 endif()
-string(TOLOWER ${MP_TARGET_OS} MP_TARGET_OS)
-if(NOT DEFINED  ${MP_TARGET_ARCH})
-    set(MP_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+string(TOLOWER ${MR_TARGET_OS} MR_TARGET_OS)
+if(NOT DEFINED  MR_TARGET_ARCH)
+    set(MR_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR})
 endif()
 
-if(${MP_TARGET_OS} MATCHES "linux")
+
+if(${MR_TARGET_OS} MATCHES "linux")
     include_directories(/usr/include/drm)
-elseif(${MP_TARGET_OS} MATCHES "windows")
+elseif(${MR_TARGET_OS} MATCHES "windows")
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set(MP_TARGET_OS "mingw")
+        set(MR_TARGET_OS "mingw")
     endif()
-elseif(${MP_TARGET_OS} MATCHES "darwin")
+elseif(${MR_TARGET_OS} MATCHES "darwin")
 
-elseif(${MP_TARGET_OS} MATCHES "android")
+elseif(${MR_TARGET_OS} MATCHES "android")
 
-elseif(${MP_TARGET_OS} MATCHES "ios")
+elseif(${MR_TARGET_OS} MATCHES "ios")
 endif()
 
-if(${MP_TARGET_ARCH} MATCHES "AMD64")
-    set(MP_TARGET_ARCH "x86_64")
+if(${MR_TARGET_ARCH} MATCHES "AMD64")
+    set(MR_TARGET_ARCH "x86_64")
 endif()
 
-set(THIRD_PARTY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../third_party")
-set(THIRD_PARTY_TARGET "${THIRD_PARTY_ROOT}/targets/${MP_TARGET_OS}-${MP_TARGET_ARCH}")
+if(NOT DEFINED MR_THIRD_PARTY_ROOT)
+    set(MR_THIRD_PARTY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../third_party")
+    set(MR_THIRD_PARTY_TARGET "${MR_THIRD_PARTY_ROOT}/targets/${MR_TARGET_OS}-${MR_TARGET_ARCH}")
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}
+        "${MR_THIRD_PARTY_ROOT}/include"
+        "${MR_THIRD_PARTY_ROOT}/include/imgui"
+        "${MR_THIRD_PARTY_TARGET}/include"
+        "${MR_THIRD_PARTY_TARGET}/include/luajit"
+        "${MR_THIRD_PARTY_TARGET}/include/freetype2")
+    link_directories("${MR_THIRD_PARTY_TARGET}/lib")
+    SET(MR_SEARCH_LIB_PATHS "${MR_THIRD_PARTY_TARGET}/lib")
+endif()
 
-message(STATUS "INFO:MAKE FOR OS:${MP_TARGET_OS} ARCH:${MP_TARGET_ARCH}")
-include_directories(textureio PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/tio"
-    "${THIRD_PARTY_ROOT}/include"
-    "${THIRD_PARTY_ROOT}/include/imgui"
-    "${THIRD_PARTY_TARGET}/include")
-link_directories("${THIRD_PARTY_TARGET}/lib")
+message(STATUS "INFO:SDMP MAKE FOR OS:${MR_TARGET_OS} ARCH:${MR_TARGET_ARCH} SYSROOT:${CMAKE_SYSROOT}")
+message(STATUS "INFO:SDMP MAKE USE PLATFORM THIRD-PARTY LIBS:${MR_SEARCH_LIB_PATHS}")
+#######################arch/os/3rd_party detect end#######################
 
 
 file( GLOB HEADERS include/tio/*.h)
