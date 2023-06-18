@@ -499,6 +499,11 @@ public:
     }
     virtual int32_t render(const GraphicTexture &textures, const RenderParam &param) override
     {
+        glViewport(param.view_x,
+                   param.view_y,
+                   param.view_width,
+                   param.view_height);
+
         glBindVertexArray(vao_);
 
         float xScaleImg = 1.0f;
@@ -516,8 +521,11 @@ public:
         glUniformMatrix4fv(uniform_transition_,1,GL_FALSE,glm::value_ptr(trasition));
 
         for(int index = 0; index < 4; index++){
-            if(uniform_textures_[index] >= 0 && textures.flags[index] > 0)
+            if(uniform_textures_[index] >= 0 && textures.flags[index] > 0){
+                glActiveTexture(GL_TEXTURE0 + textures.flags[index]);
+                glBindTexture(GL_TEXTURE_2D,textures.context[index]);
                 glUniform1i(uniform_textures_[index], textures.flags[index]);
+            }
         }
 
         if(uniform_video_size_ >= 0){
@@ -528,7 +536,23 @@ public:
 
         return 0;
     }
-
+    virtual int32_t render(const SoftwareFrame &frame, const RenderParam &param){
+        if(texture_internal_.api == mr::tio::kGraphicApiNone){
+            //make 3 textures from i420, so all format can use
+            texture_internal_.api = mr::tio::kGraphicApiOpenGL;
+            SoftwareFrameWithMemory temp_frame(kSoftwareFormatI420,128,128);
+            temp_frame.alloc();
+            texture_internal_.api = kGraphicApiOpenGL;
+            TextureIO::create_texture(temp_frame,texture_internal_);
+        }
+        TextureIO::software_frame_to_graphic(frame,texture_internal_);
+        return render(texture_internal_,param);
+    }
+    virtual int32_t render(const RenderParam& param){
+        if(texture_internal_.api == mr::tio::kGraphicApiNone)
+            return -1;
+        return render(texture_internal_,param);
+    }
     int32_t create(SoftwareFrameFormat format, YuvColorSpace color_space){
         format_ = format;
 
@@ -646,6 +670,7 @@ private:
     GLint uniform_transition_ = -1;
     GLint uniform_video_size_ = -1;
     GLint uniform_textures_[4] = {-1,-1,-1,-1};
+    GraphicTexture texture_internal_;
 };
 
 int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture &texture, SamplerMode sampler_mode)

@@ -244,6 +244,8 @@ public:
 
 struct ReferenceShader{
     struct RenderParam{
+        int32_t view_x      = 0;
+        int32_t view_y      = 0;
         int32_t view_width  = 0;
         int32_t view_height = 0;
         float   rotate      = 0;
@@ -259,6 +261,8 @@ struct ReferenceShader{
     virtual GraphicApi graphic_api() = 0;
     virtual int32_t use() = 0;
     virtual int32_t render(const GraphicTexture& textures,const RenderParam& param) = 0;
+    virtual int32_t render(const SoftwareFrame &frame, const RenderParam &param) = 0;
+    virtual int32_t render(const RenderParam &param) = 0;
 };
 
 template<typename T>

@@ -89,13 +89,6 @@ int32_t TextureioExample::on_frame()
     int item_width = width_*item_percent;
     int item_height = height_*item_percent;
 
-    GraphicTexture texture;
-    texture.api = kGraphicApiOpenGL;
-    for(int index = 0; index < 3; index++){
-        texture.context[index] = textures_[index];
-        texture.flags[index] = texture_unit_base_ + index;
-    }
-
     auto fill_texture_param = [this](SoftwareFrameFormat format,GraphicTexture& param){
 
     };
@@ -112,15 +105,13 @@ int32_t TextureioExample::on_frame()
         MR_TIMER_NEW(timer);
         if(shader != nullptr){
             shader->use();
-
-            TextureIO::software_frame_to_graphic(source_image_,texture,(SamplerMode)sampler_mode_);
             //glFinish();
             upload_ms = MR_TIMER_MS_RESET(timer);
 
             glViewport(0,0,width_,height_);
 
-            mr::tio::ReferenceShader::RenderParam param{int32_t(width_),int32_t(height_),render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
-            shader->render(texture,param);
+            mr::tio::ReferenceShader::RenderParam param{0,0,int32_t(width_),int32_t(height_),render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
+            shader->render(source_image_,param);
             //glFinish();
         }
 
@@ -155,24 +146,18 @@ int32_t TextureioExample::on_frame()
 
                 //glFinish();
                 MR_TIMER_NEW(timer);
-                {
-                    TextureIO::software_frame_to_graphic(*frame,texture,(SamplerMode)sampler_mode_);
-                    //glFinish();
-                }
-                float upload_ms = MR_TIMER_MS_RESET(timer);
 
                 {
                     FrameArea area;
                     area.aspect_crop(item_width-2,item_height-2,frame->width*1.0/frame->height);
 
-                    glViewport(x + area.x,
-                               vy + area.y,
-                               area.width,
-                               area.height);
+                    int32_t view_x = x + area.x;
+                    int32_t view_y = vy + area.y;
+                    int32_t view_w = area.width;
+                    int32_t view_h = area.height;
 
-
-                    mr::tio::ReferenceShader::RenderParam param{int32_t(area.width),int32_t(area.height),render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
-                    shader->render(texture,param);
+                    mr::tio::ReferenceShader::RenderParam param{view_x,view_y,view_w,view_h,render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
+                    shader->render(*frame,param);
                     //glFinish();
                 }
                 float render_ms = MR_TIMER_MS(timer);
@@ -182,7 +167,7 @@ int32_t TextureioExample::on_frame()
                 std::string win_name = "hint-";
                 win_name += g_software_format_info[index].name;
                 ImGui::Begin(win_name.c_str(),NULL,window_flags);
-                ImGui::Text("%s C:%.2fms U:%.2fms R:%.2fms", g_software_format_info[index].name,convert_ms_[index]/frames_convert_count_,upload_ms,render_ms);
+                ImGui::Text("%s C:%.2fms R:%.2fms", g_software_format_info[index].name,convert_ms_[index]/frames_convert_count_,render_ms);
                 ImGui::End();
 
                 index++;
