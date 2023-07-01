@@ -253,7 +253,7 @@ struct ReferenceShader{
         float   scale_y     = 1;
         float   offset_x    = 0;
         float   offset_y    = 0;
-        bool    aspect_set_ = false;
+        bool    ingore_source_aspect_ = false;
         void fill_with(FillMode mode,int32_t width,int32_t height,int32_t content_width,int32_t content_height){
             view_x      = 0;
             view_y      = 0;
@@ -264,7 +264,7 @@ struct ReferenceShader{
             scale_y     = 1;
             offset_x    = 0;
             offset_y    = 0;
-            aspect_set_ = true;
+            ingore_source_aspect_ = true;
             if(mode == kStretchFill){
                 view_width = width;
                 view_height = height;

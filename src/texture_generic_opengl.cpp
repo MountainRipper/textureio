@@ -510,9 +510,17 @@ public:
         float yScaleImg = 1.0f;
         float xScaleView = 1.0f;
         float yScaleView = 1.0f;
-        if(!param.aspect_set_){
-            yScaleImg = xScaleImg / (textures.width * 1.0 / textures.height);
-            yScaleView = param.view_width * 1.0 / param.view_height;
+        if(!param.ingore_source_aspect_){
+            float aspect_image = float(textures.width)/ textures.height;
+            float aspect_view  = float(param.view_width) / param.view_height;
+            if(aspect_image > aspect_view){
+                yScaleImg = 1.0 / aspect_image;
+                yScaleView = aspect_view;
+            }
+            else{
+                xScaleImg = aspect_image;
+                xScaleView = 1.0 / aspect_view;
+            }
         }
         glm::mat4 trasition(1.0f);
         trasition = glm::translate(trasition, glm::vec3(param.offset_x, param.offset_y, 0));
@@ -702,13 +710,6 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
 
 
         GLint gl_sampler_filter = GL_LINEAR;
-//        if(sampler_mode == kSamplerAuto){
-//            if(frame.format == kSoftwareFormatYUYV422 || frame.format == kSoftwareFormatYVYU422 || frame.format == kSoftwareFormatUYVY422){
-//                gl_sampler_filter = GL_NEAREST;
-//            }
-//        }
-//        else if(sampler_mode == kSamplerNearest)
-//            gl_sampler_filter = GL_NEAREST;
 
         upload_to_texture(texture.context[index],
                           texture.flags[index],
