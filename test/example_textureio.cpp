@@ -113,7 +113,7 @@ int32_t TextureioExample::on_frame()
                 param.fill_with((FillMode)render_fill_mode_,width_,height_,source_image_.width,source_image_.height);
             }
 
-            shader->render(source_image_,param);
+            shader->render(source_image_,param,(SamplerMode)sampler_mode_);
             //glFinish();
         }
 
@@ -165,7 +165,7 @@ int32_t TextureioExample::on_frame()
                         param.view_y += vy;
                     }
 
-                    shader->render(*frame,param);
+                    shader->render(*frame,param,(SamplerMode)sampler_mode_);
                     //glFinish();
                 }
                 float render_ms = MR_TIMER_MS(timer);

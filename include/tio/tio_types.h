@@ -297,7 +297,7 @@ struct ReferenceShader{
     virtual GraphicApi graphic_api() = 0;
     virtual int32_t use() = 0;
     virtual int32_t render(const GraphicTexture& textures,const RenderParam& param) = 0;
-    virtual int32_t render(const SoftwareFrame &frame, const RenderParam &param) = 0;
+    virtual int32_t render(const SoftwareFrame &frame, const RenderParam &param,SamplerMode sampler_mode = kSamplerAuto) = 0;
     virtual int32_t render(const RenderParam &param) = 0;
 };
 

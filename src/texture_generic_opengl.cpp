@@ -547,7 +547,7 @@ public:
 
         return 0;
     }
-    virtual int32_t render(const SoftwareFrame &frame, const RenderParam &param){
+    virtual int32_t render(const SoftwareFrame &frame, const RenderParam &param,SamplerMode sampler_mode = kSamplerAuto) override{
         if(texture_internal_.api == mr::tio::kGraphicApiNone){
             //make 3 textures from i420, so all format can use
             texture_internal_.api = mr::tio::kGraphicApiOpenGL;
@@ -556,10 +556,10 @@ public:
             texture_internal_.api = kGraphicApiOpenGL;
             TextureIO::create_texture(temp_frame,texture_internal_);
         }
-        TextureIO::software_frame_to_graphic(frame,texture_internal_);
+        TextureIO::software_frame_to_graphic(frame,texture_internal_,sampler_mode);
         return render(texture_internal_,param);
     }
-    virtual int32_t render(const RenderParam& param){
+    virtual int32_t render(const RenderParam& param) override{
         if(texture_internal_.api == mr::tio::kGraphicApiNone)
             return -1;
         return render(texture_internal_,param);
@@ -693,6 +693,9 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
     const GLuint channel_foramt_es[5] = {0,GL_LUMINANCE,GL_LUMINANCE_ALPHA,GL_RGB,GL_RGBA};
     const GLuint* channel_format = gles_ ? channel_foramt_es : channel_foramt_core;
 
+    GLint gl_sampler_filter = GL_LINEAR;
+    if(sampler_mode == kSamplerNearest)
+      gl_sampler_filter = GL_NEAREST;
 
     for(int index = 0; index < planers.planes_count; index++){
         if(index >= planers.planes_count)
@@ -706,10 +709,9 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
 
         if(frame.format == kSoftwareFormatBGRA32 && bgra_support_){
             format = GL_BGRA;
-        }        
+        }
 
 
-        GLint gl_sampler_filter = GL_LINEAR;
 
         upload_to_texture(texture.context[index],
                           texture.flags[index],
@@ -727,7 +729,7 @@ int32_t TextureGenericOpenGL::upload(const SoftwareFrame &frame, GraphicTexture 
             upload_to_texture(texture.context[1],
                               texture.flags[1],
                               2,
-                              GL_LINEAR,
+                              gl_sampler_filter,
                               channel_format[2],
                               frame.data[0],
                               frame.width,
