@@ -108,9 +108,11 @@ int32_t TextureioExample::on_frame()
             //glFinish();
             upload_ms = MR_TIMER_MS_RESET(timer);
 
-            glViewport(0,0,width_,height_);
-
             mr::tio::ReferenceShader::RenderParam param{0,0,int32_t(width_),int32_t(height_),render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
+            if(render_fill_mode_ != -1){
+                param.fill_with((FillMode)render_fill_mode_,width_,height_,source_image_.width,source_image_.height);
+            }
+
             shader->render(source_image_,param);
             //glFinish();
         }
@@ -206,7 +208,7 @@ int32_t TextureioExample::on_frame()
         ImGui::RadioButton("270", &rotate_, 270);
 
         float old_ratio = crop_aspect_ratio_;
-        int fill_mode_old_ = fill_mode_;
+        int fill_mode_old_ = convert_fill_mode_;
         ImGui::Text("Convert Aspect Ratio:"); ImGui::SameLine();ImGui::SetNextItemWidth(180);
         char format[64];
         sprintf(format,"%s %dx%d","%.2f",final_size_.width,final_size_.height);
@@ -216,9 +218,9 @@ int32_t TextureioExample::on_frame()
         }
         ImGui::SameLine();
         ImGui::Text("Fill Mode:"); ImGui::SameLine();
-        ImGui::RadioButton("Fill", &fill_mode_, 0); ImGui::SameLine();
-        ImGui::RadioButton("Fit", &fill_mode_, 1); ImGui::SameLine();
-        ImGui::RadioButton("Crop", &fill_mode_, 2);
+        ImGui::RadioButton("Fill", &convert_fill_mode_, kStretchFill); ImGui::SameLine();
+        ImGui::RadioButton("Fit", &convert_fill_mode_, kAspectFit); ImGui::SameLine();
+        ImGui::RadioButton("Crop", &convert_fill_mode_, kAspectCrop);
 
         ImGui::Text("Render Sampler:"); ImGui::SameLine();
         ImGui::RadioButton("Auto", &sampler_mode_, 0); ImGui::SameLine();
@@ -247,13 +249,20 @@ int32_t TextureioExample::on_frame()
             render_offset_y_ = 0;
             render_rotate_ = 0;
         }
+        ImGui::Text("Render Fill Mode:"); ImGui::SameLine();
+        ImGui::PushID("render_fill_mode");
+        ImGui::RadioButton("Custom", &render_fill_mode_, -1); ImGui::SameLine();
+        ImGui::RadioButton("Fill", &render_fill_mode_, kStretchFill); ImGui::SameLine();
+        ImGui::RadioButton("Fit", &render_fill_mode_, kAspectFit); ImGui::SameLine();
+        ImGui::RadioButton("Crop", &render_fill_mode_, kAspectCrop);
+        ImGui::PopID();
 
         ImGui::End();
 
         if(origin_image_old != origin_image_use_ || rotate_old_ != rotate_)
             crop_aspect_ratio_ = 0;
 
-        if(format_old != source_format_ || origin_image_old != origin_image_use_ || rotate_old_ != rotate_ || old_ratio != crop_aspect_ratio_ || fill_mode_old_ != fill_mode_){
+        if(format_old != source_format_ || origin_image_old != origin_image_use_ || rotate_old_ != rotate_ || old_ratio != crop_aspect_ratio_ || fill_mode_old_ != convert_fill_mode_){
             frames_convert_count_ = 0;
             memset(convert_ms_,0,sizeof(float)*kSoftwareFormatCount);
             convert_to_target_frames();
@@ -328,7 +337,7 @@ void TextureioExample::convert_to_target_frames()
         target_frames_[index] = dest;
 
         MR_TIMER_NEW(convert_timer);
-        software_converter_.convert(source_image_,*dest,(RotationMode)rotate_,(FillMode)fill_mode_);
+        software_converter_.convert(source_image_,*dest,(RotationMode)rotate_,(FillMode)convert_fill_mode_);
         convert_ms_[index] += MR_TIMER_MS(convert_timer);
     }
     static float totle = 0;

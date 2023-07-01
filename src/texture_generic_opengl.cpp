@@ -507,10 +507,13 @@ public:
         glBindVertexArray(vao_);
 
         float xScaleImg = 1.0f;
-        float yScaleImg = xScaleImg / (textures.width * 1.0 / textures.height);
-
+        float yScaleImg = 1.0f;
         float xScaleView = 1.0f;
-        float yScaleView = param.view_width * 1.0 / param.view_height;
+        float yScaleView = 1.0f;
+        if(!param.aspect_set_){
+            yScaleImg = xScaleImg / (textures.width * 1.0 / textures.height);
+            yScaleView = param.view_width * 1.0 / param.view_height;
+        }
         glm::mat4 trasition(1.0f);
         trasition = glm::translate(trasition, glm::vec3(param.offset_x, param.offset_y, 0));
         trasition = glm::scale(trasition, glm::vec3(xScaleView, yScaleView, 1.0f));

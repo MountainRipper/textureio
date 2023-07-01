@@ -253,6 +253,42 @@ struct ReferenceShader{
         float   scale_y     = 1;
         float   offset_x    = 0;
         float   offset_y    = 0;
+        bool    aspect_set_ = false;
+        void fill_with(FillMode mode,int32_t width,int32_t height,int32_t content_width,int32_t content_height){
+            view_x      = 0;
+            view_y      = 0;
+            view_width  = 0;
+            view_height = 0;
+            rotate      = 0;
+            scale_x     = 1;
+            scale_y     = 1;
+            offset_x    = 0;
+            offset_y    = 0;
+            aspect_set_ = true;
+            if(mode == kStretchFill){
+                view_width = width;
+                view_height = height;
+            }
+            else if(mode == kAspectFit){
+                FrameArea area;
+                area.aspect_crop(width,height,float(content_width)/content_height);
+                view_x      = area.x;
+                view_y      = area.y;
+                view_width  = area.width;
+                view_height = area.height;
+            }
+            else if(mode == kAspectCrop){
+                FrameArea area;
+                area.aspect_crop(content_width,content_height,float(width)/height);
+
+                view_width  = width;
+                view_height = height;
+                scale_x     = float(content_width) / area.width;
+                scale_y     = float(content_height) / area.height;
+                offset_x    = float(area.x) / content_width;
+                offset_y    = float(area.y) / content_height;
+            }
+        }
     };
     virtual ~ReferenceShader();
     virtual std::string shader(ShaderType type) = 0;

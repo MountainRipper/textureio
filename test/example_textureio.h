@@ -48,7 +48,8 @@ private:
     int rotate_ = kRotate0;
 
     float crop_aspect_ratio_ = 0;
-    int fill_mode_ = 0;
+    int convert_fill_mode_ = 0;
+    int render_fill_mode_ = -1;
 
     float render_scale_x_ = 1;
     float render_scale_y_ = 1;
