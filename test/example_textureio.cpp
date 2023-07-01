@@ -157,8 +157,14 @@ int32_t TextureioExample::on_frame()
                     int32_t view_y = vy + area.y;
                     int32_t view_w = area.width;
                     int32_t view_h = area.height;
-
                     mr::tio::ReferenceShader::RenderParam param{view_x,view_y,view_w,view_h,render_rotate_,render_scale_x_,render_scale_y_,render_offset_x_,render_offset_y_};
+
+                    if(render_fill_mode_ != -1){
+                        param.fill_with((FillMode)render_fill_mode_,item_width-2,item_height-2,frame->width,frame->height);
+                        param.view_x += x;
+                        param.view_y += vy;
+                    }
+
                     shader->render(*frame,param);
                     //glFinish();
                 }
