@@ -1,7 +1,6 @@
 
 add_executable(sdl_tio example_textureio.h
 example_textureio.cpp
-example_3rd_bundle.cpp
 test_pic.h
 test_png.h)
 target_compile_definitions(sdl_tio PRIVATE CMAKE_FILE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" USE_GLES=0)
@@ -13,10 +12,10 @@ endif()
 string(TOLOWER ${MP_TARGET_OS} MP_TARGET_OS)
 message(${MP_TARGET_OS})
 if(${MP_TARGET_OS} MATCHES "linux")
-    target_link_libraries(sdl_tio  glad SDL2 X11 mrcommon spdlog textureio GLESv2 EGL)
+    target_link_libraries(sdl_tio  glad mrcommon mrbundle spdlog textureio GLESv2 EGL SDL2 X11 )
 elseif(${MP_TARGET_OS} MATCHES "windows")
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        target_link_libraries(sdl_tio glad SDL2.dll mrcommon spdlog textureio dwmapi)
+        target_link_libraries(sdl_tio glad SDL2.dll mrcommon mrbundle spdlog textureio dwmapi)
     endif()
 elseif(${MP_TARGET_OS} MATCHES "darwin")
 
