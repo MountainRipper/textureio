@@ -33,6 +33,12 @@ if(${MR_TARGET_ARCH} MATCHES "AMD64")
     set(MR_TARGET_ARCH "x86_64")
 endif()
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    # using GCC
+    set(CMAKE_CXX_FLAGS "-fPIC" )
+    set(CMAKE_C_FLAGS "-fPIC" )
+endif()
+
 if(NOT DEFINED MR_THIRD_PARTY_ROOT)
     set(MR_THIRD_PARTY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../third_party")
     set(MR_THIRD_PARTY_TARGET "${MR_THIRD_PARTY_ROOT}/targets/${MR_TARGET_OS}-${MR_TARGET_ARCH}")
