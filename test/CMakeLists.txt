@@ -15,7 +15,7 @@ if(${MP_TARGET_OS} MATCHES "linux")
     target_link_libraries(sdl_tio  glad mrcommon mrbundle spdlog textureio GLESv2 EGL SDL2 X11 )
 elseif(${MP_TARGET_OS} MATCHES "windows")
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        target_link_libraries(sdl_tio glad SDL2.dll mrcommon mrbundle spdlog textureio dwmapi)
+        target_link_libraries(sdl_tio glad mrcommon mrbundle spdlog textureio dwmapi  SDL2.dll )
     endif()
 elseif(${MP_TARGET_OS} MATCHES "darwin")
 
