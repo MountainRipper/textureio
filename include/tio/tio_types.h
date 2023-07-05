@@ -195,28 +195,28 @@ struct SoftwareFormatPlaner{
 
 
 static const SoftwareFormatPlaner g_software_format_info[kSoftwareFormatCount] = {
-    [kSoftwareFormatI420   ] = {"I420",   12,3,{{1,1,1},{0.5,0.5,1},{0.5,0.5,1},{}}},
-    [kSoftwareFormatYV12   ] = {"YV12",   12,3,{{1,1,1},{0.5,0.5,1},{0.5,0.5,1},{}}},
-    [kSoftwareFormatNV12   ] = {"NV12",   12,2,{{1,1,1},{0.5,0.5,2},{},{}}},
-    [kSoftwareFormatNV21   ] = {"NV21",   12,2,{{1,1,1},{0.5,0.5,2},{},{}}},
-    [kSoftwareFormatI422   ] = {"I422",   16,3,{{1,1,1},{0.5,1,1},{0.5,1,1},{}}},
-    [kSoftwareFormatNV16   ] = {"NV16",   16,2,{{1,1,1},{0.5,1,2},{},{}}},
-    [kSoftwareFormatNV61   ] = {"NV61",   16,2,{{1,1,1},{0.5,1,2},{},{}}},
-    [kSoftwareFormatYUYV422] = {"YUYV422",16,1,{{0.5,1,4},{},{},{}}}, // half sampels of width, but 4ch-32bit per sample,rgba=y1-u-y2-v
-    [kSoftwareFormatYVYU422] = {"YVYU422",16,1,{{0.5,1,4},{},{},{}}}, // same as above
-    [kSoftwareFormatUYVY422] = {"UYVY422",16,1,{{0.5,1,4},{},{},{}}}, // same as above
-    [kSoftwareFormatI444   ] = {"I444",   24,3,{{1,1,1},{1,1,1},{1,1,1},{}}},
-    [kSoftwareFormatNV24   ] = {"NV24",   24,2,{{1,1,1},{1,1,2},{},{}}},
-    [kSoftwareFormatNV42   ] = {"NV42",   24,2,{{1,1,1},{1,1,2},{},{}}},
-    [kSoftwareFormatYUV444 ] = {"YUV444", 24,1,{{1,1,3},{},{},{}}},
-    [kSoftwareFormatRGB24  ] = {"RGB24",  24,1,{{1,1,3},{},{},{}}},
-    [kSoftwareFormatBGR24  ] = {"BGR24",  24,1,{{1,1,3},{},{},{}}},
-    [kSoftwareFormatRGBA32 ] = {"RGBA32", 32,1,{{1,1,4},{},{},{}}},
-    [kSoftwareFormatBGRA32 ] = {"BGRA32", 32,1,{{1,1,4},{},{},{}}},
-    [kSoftwareFormatARGB32 ] = {"ARGB32", 32,1,{{1,1,4},{},{},{}}},
-    [kSoftwareFormatABGR32 ] = {"ABGR32", 32,1,{{1,1,4},{},{},{}}},
-    [kSoftwareFormatGRAY8  ] = {"GRAY8",  8, 1,{{1,1,1},{},{},{}}},
-    [kSoftwareFormatGRAY8A ] = {"GRAY8A", 16,1,{{1,1,2},{},{},{}}}
+    /*[kSoftwareFormatI420   ] =*/ {"I420",   12,3,{{1,1,1},{0.5,0.5,1},{0.5,0.5,1},{}}},
+    /*[kSoftwareFormatYV12   ] =*/ {"YV12",   12,3,{{1,1,1},{0.5,0.5,1},{0.5,0.5,1},{}}},
+    /*[kSoftwareFormatNV12   ] =*/ {"NV12",   12,2,{{1,1,1},{0.5,0.5,2},{},{}}},
+    /*[kSoftwareFormatNV21   ] =*/ {"NV21",   12,2,{{1,1,1},{0.5,0.5,2},{},{}}},
+    /*[kSoftwareFormatI422   ] =*/ {"I422",   16,3,{{1,1,1},{0.5,1,1},{0.5,1,1},{}}},
+    /*[kSoftwareFormatNV16   ] =*/ {"NV16",   16,2,{{1,1,1},{0.5,1,2},{},{}}},
+    /*[kSoftwareFormatNV61   ] =*/ {"NV61",   16,2,{{1,1,1},{0.5,1,2},{},{}}},
+    /*[kSoftwareFormatYUYV422] =*/ {"YUYV422",16,1,{{0.5,1,4},{},{},{}}}, // half sampels of width, but 4ch-32bit per sample,rgba=y1-u-y2-v
+    /*[kSoftwareFormatYVYU422] =*/ {"YVYU422",16,1,{{0.5,1,4},{},{},{}}}, // same as above
+    /*[kSoftwareFormatUYVY422] =*/ {"UYVY422",16,1,{{0.5,1,4},{},{},{}}}, // same as above
+    /*[kSoftwareFormatI444   ] =*/ {"I444",   24,3,{{1,1,1},{1,1,1},{1,1,1},{}}},
+    /*[kSoftwareFormatNV24   ] =*/ {"NV24",   24,2,{{1,1,1},{1,1,2},{},{}}},
+    /*[kSoftwareFormatNV42   ] =*/ {"NV42",   24,2,{{1,1,1},{1,1,2},{},{}}},
+    /*[kSoftwareFormatYUV444 ] =*/ {"YUV444", 24,1,{{1,1,3},{},{},{}}},
+    /*[kSoftwareFormatRGB24  ] =*/ {"RGB24",  24,1,{{1,1,3},{},{},{}}},
+    /*[kSoftwareFormatBGR24  ] =*/ {"BGR24",  24,1,{{1,1,3},{},{},{}}},
+    /*[kSoftwareFormatRGBA32 ] =*/ {"RGBA32", 32,1,{{1,1,4},{},{},{}}},
+    /*[kSoftwareFormatBGRA32 ] =*/ {"BGRA32", 32,1,{{1,1,4},{},{},{}}},
+    /*[kSoftwareFormatARGB32 ] =*/ {"ARGB32", 32,1,{{1,1,4},{},{},{}}},
+    /*[kSoftwareFormatABGR32 ] =*/ {"ABGR32", 32,1,{{1,1,4},{},{},{}}},
+    /*[kSoftwareFormatGRAY8  ] =*/ {"GRAY8",  8, 1,{{1,1,1},{},{},{}}},
+    /*[kSoftwareFormatGRAY8A ] =*/ {"GRAY8A", 16,1,{{1,1,2},{},{},{}}}
 };
 
 static const SoftwareFrameFormat g_software_format_of_channel[5] = {kSoftwareFormatNone,kSoftwareFormatGRAY8,kSoftwareFormatGRAY8A,kSoftwareFormatRGB24,kSoftwareFormatRGBA32};

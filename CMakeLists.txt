@@ -63,13 +63,8 @@ add_library(textureio STATIC
   ${HEADERS}
   ${SOURCES}
 )
-target_include_directories(textureio
-    PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-target_link_libraries(textureio
-    PUBLIC
-    yuv)
+target_include_directories(textureio PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(textureio PUBLIC yuv glad)
 
 #target_link_libraries(video2hw PRIVATE )
 #target_compile_definitions(video2hw PRIVATE)

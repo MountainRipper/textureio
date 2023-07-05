@@ -95,7 +95,7 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
 
     bool pot = context_->pow_of_two_;
 
-    auto calc_target_size = [](int32_t pixels,int32_t max_size,int32_t min_size = 0,bool pot,int32_t step = 100) ->int32_t {
+    auto calc_target_size = [](int32_t pixels,int32_t max_size,int32_t min_size = 0,bool pot = false,int32_t step = 100) ->int32_t {
         int32_t target_size =  pot ? 128 : 100;
         while ((target_size * target_size) < (pixels*1.1) || ( min_size > 0 && target_size < min_size)) {
             int32_t next_size = pot ? target_size * 2 : target_size + step;
