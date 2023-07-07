@@ -20,7 +20,15 @@ if(${MR_TARGET_OS} MATCHES "linux")
     include_directories(/usr/include/drm)
 elseif(${MR_TARGET_OS} MATCHES "windows")
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set(MR_TARGET_OS "mingw")
+        set(MR_COMPILER_VER "mingw")
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        if ("${MSVC_TOOLSET_VERSION}" STREQUAL "143")
+            set(MR_COMPILER_VER "msvc2022")
+        elseif ("${MSVC_TOOLSET_VERSION}" STREQUAL "142")
+            set(MR_COMPILER_VER "msvc2019")
+        elseif ("${MSVC_TOOLSET_VERSION}" STREQUAL "141")
+            set(MR_COMPILER_VER "msvc2017")
+        endif()
     endif()
 elseif(${MR_TARGET_OS} MATCHES "darwin")
 
@@ -41,7 +49,7 @@ endif()
 
 if(NOT DEFINED MR_THIRD_PARTY_ROOT)
     set(MR_THIRD_PARTY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../third_party")
-    set(MR_THIRD_PARTY_TARGET "${MR_THIRD_PARTY_ROOT}/targets/${MR_TARGET_OS}-${MR_TARGET_ARCH}")
+    set(MR_THIRD_PARTY_TARGET "${MR_THIRD_PARTY_ROOT}/targets/${MR_BUILD_TYPE}/${MR_TARGET_OS}-${MR_COMPILER_VER}-${MR_TARGET_ARCH}")
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}
         "${MR_THIRD_PARTY_ROOT}/include"
         "${MR_THIRD_PARTY_ROOT}/include/imgui"
@@ -59,9 +67,7 @@ message(STATUS "INFO:SDMP MAKE USE PLATFORM THIRD-PARTY LIBS:${MR_SEARCH_LIB_PAT
 
 file( GLOB HEADERS include/tio/*.h)
 file( GLOB SOURCES src/*.cpp src/*.h)
-add_library(textureio STATIC
-  ${HEADERS}
-  ${SOURCES}
+add_library(textureio STATIC ${HEADERS} ${SOURCES}
 )
 target_include_directories(textureio PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(textureio PUBLIC yuv glad)

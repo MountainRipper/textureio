@@ -1,10 +1,12 @@
 #ifndef MP_VIDEO2HW_H_
 #define MP_VIDEO2HW_H_
-#include "tio_types.h"
+#include <functional>
 #include <map>
+#include "tio_types.h"
 namespace mr {
 namespace tio {
 
+typedef std::function<void(const std::string& image_file,GraphicTexture& texture,std::map<std::string,FrameArea>& areas)> TextureCreated;
 
 class TextureIO
 {
@@ -24,8 +26,7 @@ public:
     static const char* reference_shader_hardware(GraphicApi api,HardwareFrameFormat format,float version);
 
     static int32_t create_texture(const std::string& image,
-                                   GraphicTexture &texture,
-                                   std::map<std::string,FrameArea>& areas,
+                                   TextureCreated callback,
                                    SamplerMode sampler_mode = kSamplerAuto);
     static int32_t create_texture(const SoftwareFrame& frame,
                                    GraphicTexture &texture,

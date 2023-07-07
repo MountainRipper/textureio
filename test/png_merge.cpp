@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
     int32_t max_size = result["size"].as<int32_t>();
     bool pot = result["pot"].as<bool>();
 
+    printf("%s\n directory must be specify by -d or --directory\n",options.help().c_str());
     if(dir.empty()){
         fprintf(stderr,"%s\n directory must be specify by -d or --directory\n",options.help().c_str());
         return 0;
