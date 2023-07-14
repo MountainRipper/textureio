@@ -6,24 +6,24 @@ test_png.h)
 target_compile_definitions(sdl_tio PRIVATE CMAKE_FILE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" USE_GLES=0)
 
 
-if(NOT DEFINED ${MP_TARGET_OS})
-    set(MP_TARGET_OS ${CMAKE_SYSTEM_NAME})
+if(NOT DEFINED ${MR_TARGET_OS})
+    set(MR_TARGET_OS ${CMAKE_SYSTEM_NAME})
 endif()
-string(TOLOWER ${MP_TARGET_OS} MP_TARGET_OS)
-message(${MP_TARGET_OS})
-if(${MP_TARGET_OS} MATCHES "linux")
+string(TOLOWER ${MR_TARGET_OS} MR_TARGET_OS)
+message(${MR_TARGET_OS})
+if(${MR_TARGET_OS} MATCHES "linux")
     target_link_libraries(sdl_tio  mrcommon mrbundle spdlog textureio GLESv2 EGL SDL2 X11 )
-elseif(${MP_TARGET_OS} MATCHES "windows")
+elseif(${MR_TARGET_OS} MATCHES "windows")
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         target_link_libraries(sdl_tio mrcommon mrbundle spdlog textureio dwmapi  SDL2.dll )
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         target_link_libraries(sdl_tio mrcommon mrbundle spdlog textureio dwmapi  SDL2.dll )
     endif()
-elseif(${MP_TARGET_OS} MATCHES "darwin")
+elseif(${MR_TARGET_OS} MATCHES "darwin")
 
-elseif(${MP_TARGET_OS} MATCHES "android")
+elseif(${MR_TARGET_OS} MATCHES "android")
 
-elseif(${MP_TARGET_OS} MATCHES "ios")
+elseif(${MR_TARGET_OS} MATCHES "ios")
 endif()
 
 
