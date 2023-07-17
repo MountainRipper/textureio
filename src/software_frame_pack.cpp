@@ -10,39 +10,45 @@
 
 namespace mr::tio{
 
+
 struct SoftwareFramePackerPrivate{
     std::vector<SoftwareFrameWithMemory> frames_;
     std::vector<std::string> names_;
-    int32_t     item_size_wider_    = 64;
-    FillMode    fill_mode_          = kAspectCrop;
-    int32_t     max_size_           = 4096;
+    int32_t     item_scale_limit_   = kImagePackerDefaultScaleLimit;
+    int32_t     target_size_limit_  = kImagePackerDefaultOutputLimit;
+    int8_t      spacing_            = 1;
+    int16_t     increase_step_      = 50;
     bool        pow_of_two_         = false;
 };
 
-int32_t SoftwareFramePacker::create(int32_t item_size_wider, FillMode fill_mode, int32_t max_output_size, bool pow_of_two){
+int32_t SoftwareFramePacker::create(int32_t target_size_limit, int32_t item_size_limit, uint8_t spacing, uint16_t increase_step, bool pow_of_two){
     context_ = std::shared_ptr<SoftwareFramePackerPrivate>(new SoftwareFramePackerPrivate());
-    context_->item_size_wider_    = item_size_wider << 1 >> 1;
-    context_->fill_mode_          = fill_mode;
-    context_->max_size_           = max_output_size;
+    context_->item_scale_limit_   = item_size_limit >> 1 << 1;
+    context_->target_size_limit_  = target_size_limit;
+    context_->spacing_            = spacing;
+    context_->increase_step_      = increase_step;
     context_->pow_of_two_         = pow_of_two;
+
+    if(context_->item_scale_limit_ < kImagePackerDefaultScaleLimit)
+        context_->item_scale_limit_ = kImagePackerDefaultScaleLimit;
     return 0;
 }
 int32_t SoftwareFramePacker::add(const SoftwareFrame& frame, const std::string &name, bool keep_aspect_ratio){
-    int32_t width  = context_->item_size_wider_;
-    int32_t height = context_->item_size_wider_;
+    int32_t width  = context_->item_scale_limit_;
+    int32_t height = context_->item_scale_limit_;
     if(keep_aspect_ratio){
         if(frame.width >= height){
-            float scale = context_->item_size_wider_ * 1.0 / frame.width;
-            width = context_->item_size_wider_;
-            height = int32_t(frame.height * scale) << 1 >> 1;
+            float scale = context_->item_scale_limit_ * 1.0 / frame.width;
+            width = context_->item_scale_limit_;
+            height = int32_t(frame.height * scale);
         }
         else{
-            float scale = context_->item_size_wider_ * 1.0 / frame.height;
-            height = context_->item_size_wider_;
-            width = int32_t(frame.width * scale) << 1 >> 1;
+            float scale = context_->item_scale_limit_ * 1.0 / frame.height;
+            height = context_->item_scale_limit_;
+            width = int32_t(frame.width * scale) >> 1 << 1;
         }
     }
-    if(width > context_->max_size_ || height > context_->max_size_)
+    if(width > context_->target_size_limit_ || height > context_->target_size_limit_)
         return kErrorInvalidFrameSize;
     SoftwareFrameWithMemory small_frame(kSoftwareFormatRGBA32,width,height);
     small_frame.alloc();
@@ -54,7 +60,7 @@ int32_t SoftwareFramePacker::add(const SoftwareFrame& frame, const std::string &
 
 int32_t SoftwareFramePacker::add_origin(const SoftwareFrame &frame, const std::string &name)
 {
-    if(frame.width > context_->max_size_ || frame.height > context_->max_size_)
+    if(frame.width > context_->target_size_limit_ || frame.height > context_->target_size_limit_)
         return kErrorInvalidFrameSize;
     SoftwareFrameWithMemory small_frame(kSoftwareFormatRGBA32,frame.width,frame.height);
     small_frame.alloc();
@@ -77,8 +83,8 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
     {
         stbrp_rect rect;
         rect.id = index;
-        rect.w = frame.width;
-        rect.h = frame.height;
+        rect.w = frame.width + context_->spacing_;
+        rect.h = frame.height + context_->spacing_;
         rect.x = 0;
         rect.y = 0;
         rect.was_packed = 0;
@@ -88,7 +94,8 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
             width_max = rect.w;
         if(rect.h > width_max)
             width_max = rect.h;
-        totle_pixels += frame.width * frame.height;
+
+        totle_pixels += rect.w * rect.h;
 
         index++;
     }
@@ -107,7 +114,7 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
         return target_size;
     };
     //decide a target size
-    int target_size = calc_target_size(totle_pixels,context_->max_size_,width_max,context_->pow_of_two_);
+    int target_size = calc_target_size(totle_pixels,context_->target_size_limit_,width_max,context_->pow_of_two_,context_->increase_step_);
 
     int nodes_count = 4096;
     struct stbrp_node nodes[4096];
@@ -119,14 +126,17 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
         stbrp_context context;
         stbrp_init_target(&context, target_size, target_size, nodes, nodes_count);
         stbrp_setup_allow_out_of_mem (&context, 1);
+        stbrp_setup_heuristic(&context, 1);
         stbrp_pack_rects(&context, rects.data(), rects.size());
 
+        bool try_next_size_again = false;
         for (const auto& rect : rects)
         {
             if(rect.was_packed == 0){
-                int32_t next_size = pot ? target_size*2 : target_size+100;
-                if(next_size <= context_->max_size_){
+                int32_t next_size = pot ? target_size*2 : target_size + context_->increase_step_;
+                if(next_size <= context_->target_size_limit_){
                     target_size = next_size;
+                    try_next_size_again = true;
                     fprintf(stderr,"item not packaged, increase target size to:%d\n",target_size);
                     continue;
                 }
@@ -134,6 +144,8 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
                     break;
             }
         }
+        if(try_next_size_again)
+            continue;
 
         rects_unpacked.clear();
         rects_packed.clear();
@@ -189,7 +201,7 @@ int32_t SoftwareFramePacker::finish(const std::string& filename){
 
             image_index++;
             //reset target size
-            target_size = target_size = calc_target_size(totle_pixels,context_->max_size_,width_max,context_->pow_of_two_);
+            target_size = target_size = calc_target_size(totle_pixels,context_->target_size_limit_,width_max,context_->pow_of_two_);
         }
     }while(rects_unpacked.size());
 

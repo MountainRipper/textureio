@@ -46,12 +46,16 @@ int main(int argc, char *argv[])
             ("o,output","output file name. xxx.png for merged png, xxx.json for coordinate manifest,if not specify,will use directory name",cxxopts::value<std::string>()->default_value(""))
             ("d,directory", "input directory,all png file in the dir will be merged",cxxopts::value<std::string>()->default_value(""))
             ("p,pot", "POT mode, if true, output size will be power-of-two(256,512,1024...))",cxxopts::value<bool>()->default_value("false"))
-            ("s,size", "max output size limited, by size*size",cxxopts::value<int32_t>()->default_value("2048"));;
+            ("s,size", "max output size limited, by size*size",cxxopts::value<int32_t>()->default_value("2048"))
+            ("S,spacing", "spacing between images",cxxopts::value<uint8_t>()->default_value("1"))
+            ("i,increase", "spacing between images",cxxopts::value<uint16_t>()->default_value("50"));
     auto result = options.parse(argc,argv);
 
     std::string filename = result["output"].as<std::string>();
     std::string dir = result["directory"].as<std::string>();
     int32_t max_size = result["size"].as<int32_t>();
+    uint8_t spacing = result["spacing"].as<uint8_t>();
+    uint16_t increase = result["increase"].as<uint16_t>();
     bool pot = result["pot"].as<bool>();
 
     printf("%s\n directory must be specify by -d or --directory\n",options.help().c_str());
@@ -67,7 +71,7 @@ int main(int argc, char *argv[])
     }
 
     mr::tio::SoftwareFramePacker packer;
-    packer.create(0,kAspectCrop,max_size);
+    packer.create(max_size,128,spacing,increase,pot);
     for (auto const& dir_entry : std::filesystem::directory_iterator(image_dir))
     {
         if(!dir_entry.is_regular_file())

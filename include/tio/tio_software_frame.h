@@ -2,6 +2,9 @@
 #define RAWFRAMECONVERT_H
 #include "tio_types.h"
 
+#define kImagePackerDefaultScaleLimit   128
+#define kImagePackerDefaultOutputLimit  4096
+#define kImagePackerDefaultIncreaseStep 50
 namespace mr {
 namespace tio {
 
@@ -14,7 +17,7 @@ public:
 class SoftwareFramePackerPrivate;
 class SoftwareFramePacker{
 public:
-    int32_t create(int32_t item_size_wider = 0,FillMode fill_mode = kAspectCrop,int32_t max_output_size=4096, bool pow_of_two = false);
+    int32_t create(int32_t target_size_limit = kImagePackerDefaultOutputLimit, int32_t item_size_limit = kImagePackerDefaultScaleLimit, uint8_t spacing = 1, uint16_t increase_step = kImagePackerDefaultIncreaseStep, bool pow_of_two = false);
     int32_t add(const SoftwareFrame& frame,const std::string& name,bool keep_aspect_ratio);
     int32_t add_origin(const SoftwareFrame& frame,const std::string& name);
     int32_t finish(const std::string &filename);
