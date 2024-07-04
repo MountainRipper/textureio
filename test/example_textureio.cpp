@@ -2,6 +2,7 @@
 #include <glad/egl.h>
 #include <glad/gl.h>
 #include <cstring>
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 #include "test_pic.h"
@@ -9,7 +10,7 @@
 #include "glad/gl.h"
 #include <imgui.h>
 #include <imgui_internal.h>
-
+#include <mrcommon/logger.h>
 MR_MR_SDL_RUNNER_SHOWCASE(TextureioExample)
 
 
@@ -291,6 +292,11 @@ void TextureioExample::cursor_callback(double x, double y)
 }
 
 void TextureioExample::key_callback(int key, int type, int scancode, int mods)
+{
+
+}
+
+void TextureioExample::char_callback(const char *key, int type)
 {
 
 }
