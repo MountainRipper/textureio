@@ -73,8 +73,13 @@ const GLfloat g_texture_coordinates[] = {
 
 const char* VERTEX_SHADER = R"(
   precision mediump float;
-  attribute vec3 position;
-  attribute vec2 textureCoord;
+#if __VERSION__ < 130
+  varying vec3 position;
+  varying vec2 textureCoord;
+#else
+  in vec3 position;
+  in vec2 textureCoord;
+#endif
   uniform mat4 project;
   uniform mat4 transition;
   out vec2 v_texCoord;
@@ -97,15 +102,19 @@ const char* SHADER_HEADER_DEFINE_PRECISION_AND_TEXCOORD = R"(
         varying mediump vec2 v_texCoord;
     #endif
 #else
-    #if __VERSION__ < 130
-        #define TEXTURE2D texture2D
-    #else
-        #define TEXTURE2D texture
-    #endif
     #define LOWP
     #define MEDIUMP
     #define HIGHP
-    varying vec2 v_texCoord;
+
+    #if __VERSION__ < 130
+        #define TEXTURE2D texture2D
+        varying vec2 v_texCoord;
+    #else
+        #define TEXTURE2D texture
+        in vec2 v_texCoord;
+        out vec4 glFragColor;
+        #define gl_FragColor glFragColor
+    #endif
 #endif
 //__SHADER_HEADER_REPLACER__
 )";
