@@ -120,7 +120,6 @@ const char* SHADER_HEADER_DEFINE_PRECISION_AND_TEXCOORD = R"(
 )";
 
 
-
 const char* SHADER_ONE_TEXTURE_PROLOGUE = R"(
 uniform sampler2D tex1;
 )";
