@@ -296,10 +296,6 @@ void TextureioExample::key_callback(int key, int type, int scancode, int mods)
 
 }
 
-void TextureioExample::char_callback(const char *key, int type)
-{
-
-}
 
 void TextureioExample::error_callback(int err, const char *desc)
 {
