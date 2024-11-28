@@ -20,7 +20,7 @@ elseif(${MR_TARGET_OS} MATCHES "windows")
         target_link_libraries(sdl_tio mrcommon imgui_stb spdlog textureio dwmapi  SDL2.dll )
     endif()
 elseif(${MR_TARGET_OS} MATCHES "darwin")
-
+    target_link_libraries(sdl_tio  mrcommon imgui_stb spdlog textureio GLESv2 EGL SDL2)
 elseif(${MR_TARGET_OS} MATCHES "android")
 
 elseif(${MR_TARGET_OS} MATCHES "ios")
