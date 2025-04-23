@@ -1,4 +1,4 @@
-#include "example_textureio.h"
+
 #include <glad/egl.h>
 #include <glad/gl.h>
 #include <cstring>
@@ -8,9 +8,11 @@
 #include "test_pic.h"
 #include "test_png.h"
 #include "glad/gl.h"
+#define IMPLEMENT_SDL3_RUNNER
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <mrcommon/logger.h>
+#include "example_textureio.h"
+
 MR_MR_SDL_RUNNER_SHOWCASE(TextureioExample)
 
 
@@ -62,7 +64,7 @@ int32_t TextureioExample::on_init(void *window,int width, int height)
     textures_[1] = create_texture(128,128,128);
     textures_[2] = create_texture(128,128,128);
 
-    MR_GL_CHECK(mr::Logger::kLogLevelError,"create_texture");
+    MR_GL_CHECK(kLogError,"create_texture");
 
     create_programs();
 
