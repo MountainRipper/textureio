@@ -92,6 +92,7 @@ int32_t TextureioExample::on_frame()
     int item_width = width_*item_percent;
     int item_height = height_*item_percent;
 
+
     auto fill_texture_param = [this](SoftwareFrameFormat format,GraphicTexture& param){
 
     };
@@ -173,7 +174,7 @@ int32_t TextureioExample::on_frame()
                 }
                 float render_ms = MR_TIMER_MS(timer);
 
-                ImGui::SetNextWindowPos(ImVec2(x,y));
+                ImGui::SetNextWindowPos(ImVec2(x/scale_,y/scale_));
                 ImGui::SetNextWindowBgAlpha(0.15f);
                 std::string win_name = "hint-";
                 win_name += g_software_format_info[index].name;
